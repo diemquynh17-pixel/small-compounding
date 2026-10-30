@@ -130,6 +130,7 @@ main{padding:20px 16px calc(96px + env(safe-area-inset-bottom))}
 .btn.danger{color:var(--negative);border-color:var(--negative);background:none}
 .btn.sm{height:32px;padding:0 12px;font-size:13px}
 .btn[disabled]{opacity:.55;cursor:default}
+.btn.wrapbtn{white-space:normal;height:auto;min-height:var(--control-h);padding:8px 16px;text-align:center;line-height:20px}
 .ib{flex:none;display:inline-grid;place-items:center;width:34px;height:34px;border:0;border-radius:999px;background:none;color:var(--muted);cursor:pointer}
 .ib:hover{background:var(--active);color:var(--text)}
 .ib.on{color:var(--accent)}
@@ -949,9 +950,25 @@ function syncRowHtml() {
 const pwField = (name, id, label, help = '') => `<label class="f">${label}<div class="row"><input type="password" name="${name}" id="${id}" minlength="8" required
   autocomplete="off" autocapitalize="off" autocorrect="off" spellcheck="false" ${help ? `aria-describedby="${id}h"` : ''}>
   <button type="button" class="ib" data-a="togglePw" aria-label="Hiện mật khẩu" title="Hiện hoặc ẩn">${ic('eye', 16)}</button></div>${help ? `<span class="help" id="${id}h">${help}</span>` : ''}</label>`;
+// Mã kết nối: token, mật khẩu đồng bộ và gist của máy đang chạy tốt, để dán sang máy kia.
+const PAIR_PREFIX = 'SC1.';
+const pairCode = () => PAIR_PREFIX + btoa(unescape(encodeURIComponent(JSON.stringify({ t: SY.token, p: SY.pass, g: SY.gistId || null }))));
+function parsePair(code) {
+  code = (code || '').trim().replace(/\s+/g, '');
+  if (!code.startsWith(PAIR_PREFIX)) return null;
+  try { const o = JSON.parse(decodeURIComponent(escape(atob(code.slice(PAIR_PREFIX.length))))); return o.t && o.p ? o : null; } catch (e) { return null; }
+}
+const pairForm = (title, help) => `<form data-f="syncPair">
+    <label class="f">${title}<textarea name="code" required autocomplete="off" autocapitalize="off" autocorrect="off" spellcheck="false" placeholder="SC1.…" style="min-height:64px;font-size:13px;word-break:break-all"></textarea><span class="help">${help}</span></label>
+    <button class="btn primary">${ic('cloud', 16)}Kết nối bằng mã</button>
+  </form>`;
+const pairHelp = 'Trên máy đang đồng bộ được (ví dụ Mac), vào Cài đặt, bấm Sao chép mã kết nối, rồi dán vào đây. Có thể dán nhờ Handoff hoặc gửi qua AirDrop, Ghi chú.';
+const gistLine = () => SY?.gistId ? `<p class="muted small num" style="margin-top:10px">Gist ${esc(SY.gistId.slice(0, 7))}</p>` : '';
 function syncPanelHtml() {
   if (syncOn() && SY.errCode === 'badpass' && syncState !== 'busy') return `
     <div class="status err"><span class="dot"></span><span class="grow">Mật khẩu đồng bộ trên máy này khác với mật khẩu đã dùng để lưu dữ liệu trên GitHub.</span></div>
+    ${pairForm('Cách dễ nhất: dán mã kết nối', pairHelp)}
+    <div style="margin:22px 0 0;padding-top:18px;border-top:1px solid var(--rule)"></div>
     <form data-f="syncRepass">
       ${pwField('pass', 'syncPass', 'Nhập lại mật khẩu đồng bộ', 'Đúng mật khẩu bạn đã đặt ở máy kết nối đầu tiên. Bấm hình con mắt để xem lại những gì đã gõ.')}
       <button class="btn primary">${ic('refresh', 16)}Thử lại</button>
@@ -959,13 +976,20 @@ function syncPanelHtml() {
     <div style="margin-top:22px;padding-top:18px;border-top:1px solid var(--rule)">
       <h3 style="font-size:14px;font-weight:600">Quên mật khẩu đồng bộ?</h3>
       <p class="muted" style="line-height:21px;margin:6px 0 12px">Đặt mật khẩu mới ở ô trên rồi bấm nút dưới. App thay bản trên GitHub bằng dữ liệu của máy này. Máy kia sẽ báo lỗi này một lần: nhập mật khẩu mới ở đó, dữ liệu trên máy kia vẫn được gộp vào, không mất.</p>
-      <button class="btn danger" data-a="syncOverwrite">Đặt mật khẩu mới và ghi đè bản trên GitHub</button>
-    </div>`;
+      <button class="btn danger wrapbtn" data-a="syncOverwrite">Đặt mật khẩu mới và ghi đè bản trên GitHub</button>
+    </div>${gistLine()}`;
   if (syncOn()) return `
     <div class="status ${syncState === 'error' ? 'err' : syncState === 'busy' ? 'busy' : ''}"><span class="dot"></span><span class="grow">${esc(syncLabel())}</span></div>
     <p class="muted" style="line-height:21px;margin-bottom:14px">Tự đồng bộ khi mở app, khi quay lại app và vài giây sau mỗi thay đổi. Trên máy còn lại, nhập cùng token và cùng mật khẩu đồng bộ.</p>
-    <div class="row wrap"><button class="btn primary" data-a="syncNow">${ic('refresh', 16)}Đồng bộ ngay</button><button class="btn" data-a="syncOff">Ngắt đồng bộ trên máy này</button></div>`;
+    <div class="row wrap"><button class="btn primary" data-a="syncNow">${ic('refresh', 16)}Đồng bộ ngay</button><button class="btn" data-a="syncOff">Ngắt đồng bộ trên máy này</button></div>
+    <div style="margin-top:22px;padding-top:18px;border-top:1px solid var(--rule)">
+      <h3 style="font-size:14px;font-weight:600">Kết nối máy khác</h3>
+      <p class="muted" style="line-height:21px;margin:6px 0 12px">Sao chép mã rồi dán vào mục Đồng bộ trên máy kia, khỏi phải gõ token và mật khẩu. Mã chứa token và mật khẩu đồng bộ, đừng gửi cho người khác.</p>
+      <button class="btn" data-a="copyPair">${ic('copy', 16)}Sao chép mã kết nối</button>
+    </div>${gistLine()}`;
   return `
+    ${pairForm('Đã đồng bộ trên máy khác? Dán mã kết nối', pairHelp)}
+    <div style="margin:22px 0 18px;padding-top:18px;border-top:1px solid var(--rule)"><h3 style="font-size:14px;font-weight:600">Hoặc thiết lập lần đầu</h3></div>
     <ol class="steps">
       <li>Mở trang tạo token: <a href="https://github.com/settings/tokens/new?scopes=gist&description=Small%20Compounding" target="_blank" rel="noopener">github.com/settings/tokens/new</a>. Ô <b>gist</b> đã được tích sẵn.</li>
       <li>Ở Expiration chọn <b>No expiration</b>, bấm <b>Generate token</b> rồi sao chép token bắt đầu bằng <span class="num">ghp_</span>.</li>
@@ -991,18 +1015,25 @@ async function gh(path, opt = {}) {
   if (!r.ok) { const e = new Error('HTTP ' + r.status); e.status = r.status; throw e; }
   return r.status === 204 ? null : r.json();
 }
-async function findGist() {
+// Mọi gist có file đồng bộ, mới cập nhật nhất trước. Có thể có nhiều hơn một
+// nếu hai máy từng kết nối bằng hai mật khẩu khác nhau.
+async function findGists() {
+  const out = [];
   for (let p = 1; p <= 5; p++) {
     const list = await gh(`/gists?per_page=100&page=${p}`);
-    const g = list.find(g => g.files && g.files[GIST_FILE]);
-    if (g) return g.id;
+    list.forEach(g => { if (g.files && g.files[GIST_FILE]) out.push(g); });
     if (list.length < 100) break;
   }
-  return null;
+  return out.sort((a, b) => String(b.updated_at || '').localeCompare(String(a.updated_at || ''))).map(g => g.id);
+}
+async function readGist(id) {
+  const g = await gh('/gists/' + id), f = g?.files?.[GIST_FILE];
+  if (!f) return null;
+  return JSON.parse(f.truncated ? await (await fetch(f.raw_url, { cache: 'no-store' })).text() : f.content);
 }
 // Cùng một chữ có dấu có thể được bàn phím Mac và iPhone mã hóa khác nhau (NFC/NFD),
 // nên khi mở dữ liệu thì thử cả hai dạng; khi lưu mới thì luôn dùng dạng NFC.
-const passVariants = p => [...new Set([p.normalize('NFC'), p, p.normalize('NFD')])];
+const passVariants = p => [...new Set([p.normalize('NFC'), p, p.normalize('NFD'), p.trim().normalize('NFC'), p.trim()])];
 async function syncKey(saltB64) {
   if (syncKeyCache && syncKeyCache.salt === saltB64 && syncKeyCache.pass === SY.pass) return syncKeyCache.key;
   const key = await deriveKey(SY.pass.normalize('NFC'), unb64(saltB64), SYNC_ITER);
@@ -1057,18 +1088,23 @@ async function syncNow(manual) {
   if (syncing) { syncAgain = true; return; }
   syncing = true; setSync('busy');
   try {
-    if (!SY.gistId) { SY.gistId = await findGist(); syncStore(); }
-    let remote = null, salt = null;
+    if (!SY.gistId) { SY.gistId = (await findGists())[0] || null; syncStore(); }
+    let remote = null, salt = null, p = null;
     if (SY.gistId) {
-      let g = null;
-      try { g = await gh('/gists/' + SY.gistId); } catch (e) { if (e.status === 404) { SY.gistId = null; syncStore(); } else throw e; }
-      const f = g?.files?.[GIST_FILE];
-      if (f) {
-        const txt = f.truncated ? await (await fetch(f.raw_url, { cache: 'no-store' })).text() : f.content;
-        if (!syncForce) {
-          const p = JSON.parse(txt); salt = p.salt;
-          remote = normalize(JSON.parse(await syncOpen(p)));
+      try { p = await readGist(SY.gistId); } catch (e) { if (e.status === 404) { SY.gistId = null; syncStore(); } else throw e; }
+    }
+    if (p && !syncForce) {
+      try { remote = normalize(JSON.parse(await syncOpen(p))); salt = p.salt; }
+      catch (e) {
+        if (e.name !== 'OperationError') throw e;
+        // Gist đang nhớ không mở được: thử các gist đồng bộ khác trong tài khoản.
+        let found = false;
+        for (const id of await findGists()) {
+          if (id === SY.gistId) continue;
+          const q = await readGist(id); if (!q) continue;
+          try { remote = normalize(JSON.parse(await syncOpen(q))); salt = q.salt; SY.gistId = id; syncStore(); found = true; break; } catch (e2) { }
         }
+        if (!found) throw e;
       }
     }
     const before = canon(S);
@@ -1194,6 +1230,7 @@ const A = {
   },
   syncTap() { if (syncOn()) syncNow(true); else A.tab('settings'); },
   syncNow() { syncNow(true); },
+  copyPair() { copyText(pairCode(), 'mã kết nối'); },
   togglePw(_, b) { const i = b.parentElement.querySelector('input'); const show = i.type === 'password'; i.type = show ? 'text' : 'password'; b.innerHTML = ic(show ? 'eye-off' : 'eye', 16); },
   syncOverwrite() {
     const v = $('#syncPass')?.value || '';
@@ -1244,6 +1281,11 @@ const F = {
     await sealVault(); closeDlg(); render(); toast('Đã lưu và mã hóa');
   },
   async vaultNewPw(fd) { if (fd.get('pw') !== fd.get('pw2')) return toast('Hai mật khẩu không khớp'); await createVault(fd.get('pw'), V.items); closeDlg(); render(); toast('Đã đổi mật khẩu chính'); },
+  syncPair(fd) {
+    const o = parsePair(fd.get('code'));
+    if (!o) return toast('Mã kết nối không hợp lệ. Hãy sao chép lại từ máy kia.');
+    SY = { token: o.t, pass: o.p, gistId: o.g || null }; syncKeyCache = null; syncStore(); syncNow(true);
+  },
   syncRepass(fd) { SY.pass = fd.get('pass'); syncKeyCache = null; syncStore(); syncNow(true); },
   async syncSetup(fd, form) {
     SY = { token: fd.get('token').trim(), pass: fd.get('pass') }; syncStore();

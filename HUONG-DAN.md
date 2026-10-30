@@ -29,7 +29,9 @@ Dữ liệu được **mã hóa ngay trên máy** bằng mật khẩu đồng b�
 1. Mở app, vào **Cài đặt → Đồng bộ iPhone và Mac**.
 2. Bấm link tạo token (ô `gist` đã được tích sẵn). Ở Expiration chọn **No expiration**, bấm **Generate token**, rồi sao chép token (bắt đầu bằng `ghp_`).
 3. Dán token và đặt **mật khẩu đồng bộ** (ít nhất 8 ký tự), rồi bấm **Kết nối và đồng bộ**.
-4. Trên máy còn lại, làm y hệt với **cùng token và cùng mật khẩu đồng bộ**. Dữ liệu của hai máy sẽ được gộp lại.
+4. Trên máy còn lại, **không cần gõ lại**: ở máy vừa kết nối, vào Cài đặt và bấm **Sao chép mã kết nối**. Dán mã đó vào ô **Dán mã kết nối** trên máy kia (dán qua Handoff, hoặc gửi bằng AirDrop hay Ghi chú), rồi bấm **Kết nối bằng mã**. Dữ liệu của hai máy sẽ được gộp lại.
+
+> Trên iPhone, ô mật khẩu luôn dùng bàn phím tiếng Anh nên không gõ được chữ có dấu. Hãy dùng mã kết nối, hoặc đặt mật khẩu đồng bộ **không dấu**.
 
 Sau đó app tự đồng bộ khi bạn mở app, khi quay lại app, và vài giây sau mỗi thay đổi.
 

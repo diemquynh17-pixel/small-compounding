@@ -1,6 +1,6 @@
 // Service worker: lưu app vào bộ nhớ đệm để mở được khi không có mạng.
 // Đổi số phiên bản mỗi khi cập nhật app để điện thoại tải bản mới.
-const CACHE = 'sc-v3';
+const CACHE = 'sc-v4';
 const ASSETS = [
   './',
   './index.html',
