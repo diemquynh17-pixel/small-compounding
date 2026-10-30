@@ -8,7 +8,8 @@ App là một **PWA** (trang web cài được như app): một bộ mã dùng c
 | `index.html` | Toàn bộ app (giao diện + logic) |
 | `manifest.webmanifest` | Tên và icon khi cài ra màn hình chính |
 | `sw.js` | Cho phép mở app khi không có mạng |
-| `icons/` | Icon của app |
+| `icons/`, `icons.js` | Icon của app và bộ icon giao diện (Tabler Icons, MIT) |
+| `fonts/` | Font Be Vietnam Pro và Newsreader (SIL Open Font License), có dấu tiếng Việt |
 
 ## Đưa app lên mạng (miễn phí, khoảng 10 phút) — GitHub Pages
 1. Tạo tài khoản tại github.com → bấm **New repository** → đặt tên `small-compounding` → chọn **Public** → Create.
@@ -22,11 +23,25 @@ App là một **PWA** (trang web cài được như app): một bộ mã dùng c
 - **iPhone (Safari):** mở địa chỉ trên → nút Chia sẻ (□↑) → **Thêm vào MH chính**.
 - **Mac (Safari 17+):** mở địa chỉ → menu **File → Add to Dock**. (Chrome: biểu tượng cài đặt ở thanh địa chỉ.)
 
+## Đồng bộ iPhone và Mac
+Dữ liệu được **mã hóa ngay trên máy** bằng mật khẩu đồng bộ, rồi mới lưu vào một *gist bí mật* trong tài khoản GitHub của bạn. GitHub chỉ thấy chuỗi ký tự đã mã hóa.
+
+1. Mở app, vào **Cài đặt → Đồng bộ iPhone và Mac**.
+2. Bấm link tạo token (ô `gist` đã được tích sẵn). Ở Expiration chọn **No expiration**, bấm **Generate token**, rồi sao chép token (bắt đầu bằng `ghp_`).
+3. Dán token và đặt **mật khẩu đồng bộ** (ít nhất 8 ký tự), rồi bấm **Kết nối và đồng bộ**.
+4. Trên máy còn lại, làm y hệt với **cùng token và cùng mật khẩu đồng bộ**. Dữ liệu của hai máy sẽ được gộp lại.
+
+Sau đó app tự đồng bộ khi bạn mở app, khi quay lại app, và vài giây sau mỗi thay đổi.
+
+- Nếu sửa cùng một mục trên cả hai máy, bản sửa sau cùng được giữ. Mục bị xóa ở một máy cũng bị xóa ở máy kia.
+- **Két mật khẩu:** chỉ tạo két trên **một** máy. Đồng bộ xong, máy kia mở két bằng cùng mật khẩu chính.
+- Token được lưu trên từng máy và không nằm trong file sao lưu. Nếu mất máy, vào github.com/settings/tokens để xóa token đó.
+
 ## Lưu ý quan trọng
-- **Dữ liệu riêng cho từng máy.** iPhone và Mac không tự đồng bộ với nhau. Để chuyển dữ liệu: ⚙️ → Xuất bản sao lưu → gửi file qua AirDrop → bên máy kia chọn ⚙️ → Nhập.
-- **Sao lưu mỗi tuần** (⚙️ → Xuất). Nếu xóa app hoặc xóa dữ liệu Safari thì dữ liệu trên máy cũng mất theo.
-- **Mật khẩu chính** của két: quên là mất, không có cách khôi phục.
-- **Nhắc nhở:** app chỉ báo khi đang mở. Nếu muốn được báo cả khi đã đóng app, bấm 📅 để thêm nhắc nhở vào app Lịch.
+- Vẫn nên **sao lưu định kỳ** (Cài đặt → Xuất bản sao lưu).
+- Quên **mật khẩu chính** của két thì mất dữ liệu trong két. Quên **mật khẩu đồng bộ** thì bấm Ngắt đồng bộ, xóa gist `small-compounding.sync.json` trên gist.github.com, rồi kết nối lại bằng mật khẩu mới.
+- **Nhắc nhở** chỉ báo khi app đang mở. Bấm nút lịch để thêm nhắc nhở vào app Lịch, khi đó bạn được báo cả khi đã đóng app.
+- **Mac Ventura (13):** Safari không có Add to Dock. Hãy ghim tab (Window → Pin Tab) hoặc kéo địa chỉ trang xuống Dock.
 
 ## Chạy thử trên máy tính (không bắt buộc)
 ```

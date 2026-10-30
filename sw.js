@@ -1,6 +1,6 @@
 // Service worker: lưu app vào bộ nhớ đệm để mở được khi không có mạng.
 // Đổi số phiên bản mỗi khi cập nhật app để điện thoại tải bản mới.
-const CACHE = 'sc-v1';
+const CACHE = 'sc-v2';
 const ASSETS = [
   './',
   './index.html',
@@ -8,7 +8,21 @@ const ASSETS = [
   './icons/icon.svg',
   './icons/icon-180.png',
   './icons/icon-192.png',
-  './icons/icon-512.png'
+  './icons/icon-512.png',
+  './icons.js',
+  './fonts/fonts.css',
+  './fonts/be-vietnam-pro-400-latin-ext.woff2',
+  './fonts/be-vietnam-pro-400-latin.woff2',
+  './fonts/be-vietnam-pro-400-vietnamese.woff2',
+  './fonts/be-vietnam-pro-500-latin-ext.woff2',
+  './fonts/be-vietnam-pro-500-latin.woff2',
+  './fonts/be-vietnam-pro-500-vietnamese.woff2',
+  './fonts/be-vietnam-pro-600-latin-ext.woff2',
+  './fonts/be-vietnam-pro-600-latin.woff2',
+  './fonts/be-vietnam-pro-600-vietnamese.woff2',
+  './fonts/newsreader-400-latin-ext.woff2',
+  './fonts/newsreader-400-latin.woff2',
+  './fonts/newsreader-400-vietnamese.woff2'
 ];
 
 self.addEventListener('install', e => {

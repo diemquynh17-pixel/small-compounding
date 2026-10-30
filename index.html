@@ -5,226 +5,314 @@
 <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
 <title>Small Compounding</title>
 <meta name="description" content="Ghi chú nhanh, việc trong ngày/tuần, sách đọc, nhắc nhở, check thói quen và két mật khẩu mã hóa.">
-<meta name="theme-color" content="#f6f3ee" media="(prefers-color-scheme: light)">
-<meta name="theme-color" content="#151412" media="(prefers-color-scheme: dark)">
+<meta name="theme-color" content="#ffffff" media="(prefers-color-scheme: light)">
+<meta name="theme-color" content="#111311" media="(prefers-color-scheme: dark)">
 <link rel="manifest" href="manifest.webmanifest">
 <link rel="icon" href="icons/icon.svg" type="image/svg+xml">
 <link rel="apple-touch-icon" href="icons/icon-180.png">
+<link rel="stylesheet" href="fonts/fonts.css">
 <meta name="apple-mobile-web-app-capable" content="yes">
 <meta name="mobile-web-app-capable" content="yes">
 <meta name="apple-mobile-web-app-status-bar-style" content="default">
 <meta name="apple-mobile-web-app-title" content="Compounding">
 <style>
+/* Hướng thiết kế: taste-skill (Leonxlnx/taste-skill) cho màn hình app, style "editorial-greeting":
+   lời chào là tiêu đề, cột giữa 12 cột, mọi con số ở độ đậm thường trên các panel một tông.
+   Màu chủ đạo xanh lá đặt trên dữ liệu (check, tuần này, đường cộng dồn) và một nút chính. */
 :root{
-  --bg:#f6f3ee; --surface:#fffdf9; --surface-2:#f0ebe3; --ink:#22201c; --muted:#756e66;
-  --line:#e4ddd2; --accent:#2f7a55; --accent-ink:#ffffff; --accent-soft:#e3f0e8;
-  --warn:#b5542f; --warn-soft:#f8e6dd; --gold:#b8860b; --bar-prev:#cfc6b8;
-  --radius:14px; --shadow:0 1px 2px rgba(40,30,20,.06);
+  --ground:#ffffff; --surface:#f3f6f2; --raised:#ffffff; --active:#e7ece5;
+  --border:#e3e8e1; --rule:#e2e7e0; --control:#d3d9d0;
+  --text:#1c1f1b; --muted:#5b6159; --faint:#686d66;
+  --accent:#2f7a55; --accent-ink:#ffffff; --accent-soft:#dcefe3; --accent-deep:#1f5a3d;
+  --positive:#2f7a55; --negative:#b42318; --neg-soft:#fdecea; --neg-ink:#7a1d14;
+  --grid:#e1e6df; --prev:#c4cbc1;
+  --radius-card:22px; --radius-inner:12px; --gap:16px; --pad:20px; --control-h:38px;
+  --font:"Be Vietnam Pro",system-ui,-apple-system,"Segoe UI",sans-serif;
+  --serif:"Newsreader",Georgia,serif;
   color-scheme:light;
 }
 @media (prefers-color-scheme: dark){
   :root:not([data-theme="light"]){
-    --bg:#151412; --surface:#1e1c19; --surface-2:#2a2723; --ink:#ece7df; --muted:#a39b91;
-    --line:#34302b; --accent:#5fbf8a; --accent-ink:#0f1a14; --accent-soft:#1f3329;
-    --warn:#e38a63; --warn-soft:#3a251c; --gold:#e0b44a; --bar-prev:#4a443d; --shadow:none;
+    --ground:#111311; --surface:#1a1d1a; --raised:#222622; --active:#272b27;
+    --border:#2b302b; --rule:#2a2e2a; --control:#3d433d;
+    --text:#f1f3f0; --muted:#b4b9b2; --faint:#959a93;
+    --accent:#5cc28c; --accent-ink:#0c1a12; --accent-soft:#1c3427; --accent-deep:#8fd9b1;
+    --positive:#5cc28c; --negative:#ef6b5b; --neg-soft:#3a1f1b; --neg-ink:#ffb4a8;
+    --grid:#2a2e2a; --prev:#4a504a;
     color-scheme:dark;
   }
 }
 :root[data-theme="dark"]{
-  --bg:#151412; --surface:#1e1c19; --surface-2:#2a2723; --ink:#ece7df; --muted:#a39b91;
-  --line:#34302b; --accent:#5fbf8a; --accent-ink:#0f1a14; --accent-soft:#1f3329;
-  --warn:#e38a63; --warn-soft:#3a251c; --gold:#e0b44a; --bar-prev:#4a443d; --shadow:none;
+  --ground:#111311; --surface:#1a1d1a; --raised:#222622; --active:#272b27;
+  --border:#2b302b; --rule:#2a2e2a; --control:#3d433d;
+  --text:#f1f3f0; --muted:#b4b9b2; --faint:#959a93;
+  --accent:#5cc28c; --accent-ink:#0c1a12; --accent-soft:#1c3427; --accent-deep:#8fd9b1;
+  --positive:#5cc28c; --negative:#ef6b5b; --neg-soft:#3a1f1b; --neg-ink:#ffb4a8;
+  --grid:#2a2e2a; --prev:#4a504a;
   color-scheme:dark;
 }
 *{box-sizing:border-box}
 html{-webkit-text-size-adjust:100%}
-body{margin:0;background:var(--bg);color:var(--ink);
-  font:15px/1.45 -apple-system,BlinkMacSystemFont,"SF Pro Text","Segoe UI",Roboto,"Helvetica Neue",Arial,sans-serif;
-  padding-bottom:calc(76px + env(safe-area-inset-bottom));}
+body{margin:0;background:var(--ground);color:var(--text);font:400 14px/20px var(--font);-webkit-font-smoothing:antialiased}
 button,input,select,textarea{font:inherit;color:inherit}
-h1,h2,h3{margin:0;font-weight:650;letter-spacing:-.01em}
-h2{font-size:17px}
-h3{font-size:14px}
-.muted{color:var(--muted)} .small{font-size:12.5px}
-.grow{flex:1;min-width:0;overflow-wrap:anywhere}
+h1,h2,h3,p{margin:0}
+a{color:var(--accent-deep)}
+.num{font-variant-numeric:tabular-nums}
+.unit{color:var(--muted);font-size:.6em;margin-left:1px}
+.muted{color:var(--muted)}
+.small{font-size:12px;line-height:16px}
+.i{flex:none;display:block}
 
-/* Header */
-.top{position:sticky;top:0;z-index:5;background:color-mix(in srgb,var(--bg) 88%,transparent);
-  backdrop-filter:blur(10px);-webkit-backdrop-filter:blur(10px);
-  padding:calc(10px + env(safe-area-inset-top)) 16px 10px;display:flex;align-items:center;gap:12px;border-bottom:1px solid var(--line)}
-.brand{display:flex;align-items:center;gap:10px;flex:1;min-width:0}
-.brand img{width:30px;height:30px;border-radius:8px}
-.brand h1{font-size:17px}
-.brand .muted{font-size:12.5px}
+/* ---------- Khung (shell) ---------- */
+.side{display:none}
+.topbar{position:sticky;top:0;z-index:5;display:flex;align-items:center;gap:6px;height:calc(52px + env(safe-area-inset-top));
+  padding:env(safe-area-inset-top) 10px 0 16px;background:var(--ground);border-bottom:1px solid var(--rule)}
+.topbar .mark{width:24px;height:24px;border-radius:7px}
+.topbar .name{flex:1;font-weight:600;font-size:16px;margin-left:6px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.bottombar{position:fixed;left:0;right:0;bottom:0;z-index:5;display:flex;background:var(--ground);border-top:1px solid var(--rule);
+  padding:4px 6px calc(4px + env(safe-area-inset-bottom))}
+.bottombar button{flex:1;min-width:0;border:0;background:none;display:flex;flex-direction:column;align-items:center;gap:3px;
+  padding:7px 0 5px;color:var(--muted);font-size:11px;line-height:14px;cursor:pointer;border-radius:12px}
+.bottombar button.on{color:var(--text);font-weight:500}
+.bottombar button.on .i{color:var(--accent)}
+main{padding:20px 16px calc(96px + env(safe-area-inset-bottom))}
+.canvas{max-width:1100px;margin:0 auto}
 
-main{max-width:980px;margin:0 auto;padding:16px}
-section.card{background:var(--surface);border:1px solid var(--line);border-radius:var(--radius);padding:14px;margin-bottom:14px;box-shadow:var(--shadow)}
-.card-head{display:flex;align-items:center;gap:8px;margin-bottom:10px}
-.card-head h2{flex:1}
-
-/* Bottom tabs */
-.tabs{position:fixed;left:0;right:0;bottom:0;z-index:6;display:flex;background:var(--surface);
-  border-top:1px solid var(--line);padding:6px 4px calc(6px + env(safe-area-inset-bottom))}
-.tabs button{flex:1;border:0;background:none;padding:4px 0;display:flex;flex-direction:column;align-items:center;gap:2px;
-  font-size:11px;color:var(--muted);cursor:pointer;border-radius:10px;min-width:0}
-.tabs button .ic{font-size:19px;line-height:1.1;filter:grayscale(1);opacity:.75}
-.tabs button.on{color:var(--accent);font-weight:600}
-.tabs button.on .ic{filter:none;opacity:1}
-
-@media (min-width:900px){
-  body{padding-bottom:0;padding-left:200px}
-  .tabs{top:0;bottom:0;right:auto;width:200px;flex-direction:column;border-top:0;border-right:1px solid var(--line);padding:76px 10px 10px;gap:2px}
-  .tabs button{flex:0;flex-direction:row;gap:10px;padding:9px 12px;font-size:14px;justify-content:flex-start}
-  .tabs button.on{background:var(--accent-soft)}
-  .grid2{display:grid;grid-template-columns:1fr 1fr;gap:14px;align-items:start}
-  .grid2>section.card{margin-bottom:0}
+@media (min-width:960px){
+  body{display:grid;grid-template-columns:224px 1fr}
+  .topbar,.bottombar{display:none}
+  .side{display:flex;flex-direction:column;position:sticky;top:0;height:100vh;padding:20px 12px 16px}
+  .brand{display:flex;align-items:center;gap:10px;padding:0 10px 22px}
+  .brand img{width:28px;height:28px;border-radius:8px}
+  .brand b{font-weight:600;font-size:15px}
+  .nav{display:flex;flex-direction:column;gap:2px}
+  .nav button{display:flex;align-items:center;gap:10px;height:34px;padding:0 10px;border:0;border-radius:10px;background:none;
+    color:var(--text);cursor:pointer;text-align:left;font-size:14px}
+  .nav button .i{color:var(--muted)}
+  .nav button:hover{background:var(--surface)}
+  .nav button.on{background:var(--active)}
+  .nav button.on .i{color:var(--accent)}
+  .side .foot{margin-top:auto;display:flex;flex-direction:column;gap:2px}
+  main{padding:36px 40px 64px}
 }
+/* Lưới: 12 cột trong cột giữa 1100px. 12 × 78.33 + 11 × 16 = 1100. */
+.grid{display:grid;grid-template-columns:repeat(12,minmax(0,1fr));gap:var(--gap);align-items:start}
+.s12{grid-column:span 12}.s8{grid-column:span 8}.s6{grid-column:span 6}.s4{grid-column:span 4}
+@media (max-width:1099px){.s8,.s4{grid-column:span 12}}
+@media (max-width:759px){.s6{grid-column:span 12}}
+.stack{display:flex;flex-direction:column;gap:var(--gap)}
 
-/* Controls */
+/* ---------- Tiêu đề màn hình ---------- */
+.head{display:flex;align-items:flex-end;gap:16px;margin-bottom:24px;flex-wrap:wrap}
+.head .t{flex:1 1 320px;min-width:0}
+.head h1{font-size:24px;line-height:30px;font-weight:600;letter-spacing:-.01em}
+.head h1.greet{font-family:var(--serif);font-weight:400;font-size:30px;line-height:34px;letter-spacing:-.015em}
+.head .sub{margin-top:6px;font-size:15px;line-height:22px;color:var(--muted)}
+.head .acts{display:flex;gap:8px;align-items:center}
+@media (min-width:960px){.head h1.greet{font-size:44px;line-height:48px}.head{margin-bottom:28px}}
+
+/* ---------- Panel ---------- */
+.panel{background:var(--surface);border-radius:var(--radius-card);padding:var(--pad)}
+.ph{display:flex;align-items:center;gap:10px;margin-bottom:12px;min-height:28px}
+.ph h2{flex:1;font-size:16px;line-height:22px;font-weight:600}
+.ph .meta{color:var(--muted);font-size:13px}
+.inner{background:var(--raised);border-radius:var(--radius-inner);padding:16px}
+
+/* ---------- Nút & ô nhập ---------- */
+.btn{display:inline-flex;align-items:center;justify-content:center;gap:6px;height:var(--control-h);padding:0 16px;border-radius:999px;
+  border:1px solid var(--control);background:var(--raised);color:var(--text);font-weight:500;cursor:pointer;white-space:nowrap;transition:transform .08s}
+.btn:active{transform:scale(.97)}
+.btn.primary{background:var(--accent);border-color:var(--accent);color:var(--accent-ink)}
+.btn.primary:hover{background:var(--accent-deep);border-color:var(--accent-deep)}
+:root[data-theme="dark"] .btn.primary:hover{color:var(--ground)}
+.btn.text{border-color:transparent;background:none;padding:0 8px;color:var(--text)}
+.btn.text:hover{background:var(--active)}
+.btn.danger{color:var(--negative);border-color:var(--negative);background:none}
+.btn.sm{height:32px;padding:0 12px;font-size:13px}
+.btn[disabled]{opacity:.55;cursor:default}
+.ib{flex:none;display:inline-grid;place-items:center;width:34px;height:34px;border:0;border-radius:999px;background:none;color:var(--muted);cursor:pointer}
+.ib:hover{background:var(--active);color:var(--text)}
+.ib.on{color:var(--accent)}
+.ib.warn{color:var(--negative)}
 input[type=text],input[type=password],input[type=url],input[type=number],input[type=datetime-local],input[type=search],select,textarea{
-  background:var(--surface-2);border:1px solid var(--line);border-radius:10px;padding:9px 11px;width:100%;min-width:0;outline:none}
+  height:var(--control-h);width:100%;min-width:0;padding:0 14px;border:1px solid var(--border);border-radius:999px;background:var(--raised);outline:none}
+select{padding-right:8px}
+textarea{height:auto;min-height:96px;padding:12px 14px;border-radius:14px;resize:vertical;line-height:20px}
+input::placeholder,textarea::placeholder{color:var(--faint)}
 input:focus,select:focus,textarea:focus{border-color:var(--accent);box-shadow:0 0 0 3px var(--accent-soft)}
-textarea{resize:vertical;min-height:84px}
+:focus-visible{outline:2px solid var(--accent);outline-offset:2px}
+input:focus-visible,select:focus-visible,textarea:focus-visible{outline:none}
 .row{display:flex;gap:8px;align-items:center}
 .row.wrap{flex-wrap:wrap}
-.stack{display:flex;flex-direction:column;gap:8px}
-.btn{border:1px solid var(--accent);background:var(--accent);color:var(--accent-ink);border-radius:10px;padding:9px 14px;font-weight:600;cursor:pointer;white-space:nowrap}
-.btn.ghost{background:transparent;color:var(--accent)}
-.btn.plain{background:var(--surface-2);color:var(--ink);border-color:var(--line)}
-.btn.danger{background:transparent;color:var(--warn);border-color:var(--warn)}
-.btn.sm{padding:5px 10px;font-size:13px;border-radius:8px}
-.icon{border:0;background:none;color:var(--muted);cursor:pointer;padding:6px 7px;border-radius:8px;font-size:14px;line-height:1}
-.icon:hover{background:var(--surface-2);color:var(--ink)}
-.chip{display:inline-block;font-size:11.5px;padding:1px 8px;border-radius:999px;background:var(--surface-2);color:var(--muted);border:1px solid var(--line);white-space:nowrap}
-.chip.on{background:var(--accent-soft);color:var(--accent);border-color:transparent}
-button.chip{cursor:pointer}
-.seg{display:flex;gap:6px;flex-wrap:wrap;margin-bottom:10px}
+.grow{flex:1;min-width:0}
+label.f{display:block;font-weight:500;margin-bottom:16px}
+label.f>input,label.f>textarea,label.f>select,label.f>.row{margin-top:8px}
+label.f .help{display:block;font-weight:400;color:var(--muted);font-size:13px;margin-top:6px}
 
-/* Lists */
-ul.list{list-style:none;margin:0;padding:0}
-.item{display:flex;align-items:center;gap:8px;padding:8px 0;border-top:1px solid var(--line)}
-.item:first-child{border-top:0}
-.item.done .grow{color:var(--muted);text-decoration:line-through}
-.check{flex:none;width:30px;height:30px;border-radius:9px;border:2px solid var(--line);background:var(--surface);color:var(--accent-ink);cursor:pointer;font-weight:800;font-size:16px;display:grid;place-items:center}
-.check.sm{width:24px;height:24px;border-radius:7px;font-size:13px}
-.done>.check,.check.on{background:var(--accent);border-color:var(--accent)}
-.min-in{width:70px!important;flex:none;padding:5px 8px!important;font-size:13px;text-align:right}
-.empty{color:var(--muted);font-size:13.5px;padding:6px 0}
-
-/* Habits */
-.habit{display:flex;align-items:center;gap:12px;padding:10px;border-radius:12px;background:var(--surface-2);margin-bottom:8px}
-.habit:last-child{margin-bottom:0}
-.habit .check{width:36px;height:36px;border-radius:11px;font-size:18px}
-.hb-name{font-weight:600}
+/* ---------- Danh sách ---------- */
+.list{list-style:none;margin:0;padding:0}
+.li{display:flex;align-items:center;gap:10px;min-height:48px;padding:6px 0;border-top:1px solid var(--rule)}
+.li:first-child{border-top:0}
+.li .t1{overflow-wrap:anywhere}
+.li .t2{color:var(--muted);font-size:13px;line-height:18px;margin-top:2px}
+.li.done .t1{color:var(--muted);text-decoration:line-through;text-decoration-color:var(--prev)}
+.empty{border:1px dashed var(--control);border-radius:12px;padding:10px 14px;color:var(--muted);font-size:13px}
+.ck{flex:none;display:grid;place-items:center;width:26px;height:26px;border-radius:999px;border:1.5px solid var(--control);background:var(--raised);color:transparent;cursor:pointer;padding:0}
+.ck:hover{border-color:var(--accent)}
+.ck.on{background:var(--accent);border-color:var(--accent);color:var(--accent-ink)}
 .mins{display:flex;align-items:center;gap:6px;flex:none}
-.mins input{width:64px;padding:6px 8px;text-align:right}
-.mins span{font-size:12.5px;color:var(--muted)}
-@media (max-width:520px){.habit{flex-wrap:wrap}.habit .mins{width:100%;padding-left:48px}.habit .mins input{flex:1;width:auto}}
-.progress{height:6px;border-radius:9px;background:var(--surface-2);overflow:hidden;margin-top:4px}
-.progress>i{display:block;height:100%;background:var(--accent);border-radius:9px}
-.streak{color:var(--gold);font-weight:600}
+.mins input{width:64px;height:32px;padding:0 10px;text-align:right}
+.mins .u{color:var(--muted);font-size:13px}
+.chip{display:inline-flex;align-items:center;height:22px;padding:0 9px;border-radius:999px;background:var(--active);color:var(--muted);font-size:12px;white-space:nowrap;flex:none}
+.chip.ok{background:var(--accent-soft);color:var(--accent-deep)}
+.chip.bad{background:var(--neg-soft);color:var(--neg-ink)}
 
-/* Notes */
-.note{padding:10px 12px;border:1px solid var(--line);border-radius:12px;margin-bottom:8px;background:var(--surface)}
-.note.pinned{border-color:var(--gold)}
-.note .txt{white-space:pre-wrap;overflow-wrap:anywhere}
-.note .meta{display:flex;align-items:center;gap:4px;margin-top:6px}
-.tag{color:var(--accent);font-weight:600}
+/* ---------- Daily check ---------- */
+.habit{display:grid;grid-template-columns:40px 1fr auto auto;align-items:center;gap:14px;padding:12px 0;border-top:1px solid var(--rule)}
+.habit:first-of-type{border-top:0;padding-top:4px}
+.habit .ck{width:40px;height:40px}
+.habit .nm{font-size:16px;line-height:22px;font-weight:500}
+.habit .mt{color:var(--muted);font-size:13px;line-height:18px;margin-top:2px}
+.strip{display:flex;gap:4px}
+.strip i{width:14px;height:14px;border-radius:4px;background:var(--active)}
+.strip i.on{background:var(--accent)}
+.strip i.today{box-shadow:inset 0 0 0 1.5px var(--accent)}
+.strip i.on.today{box-shadow:none}
+@media (max-width:600px){
+  .habit{grid-template-columns:40px 1fr;row-gap:10px}
+  .habit .strip{grid-column:2}
+  .habit .mins{grid-column:2;justify-self:start}
+}
+.kv{display:flex;flex-direction:column}
+.kv .k{color:var(--muted);font-size:13px}
+.kv .v{font-size:24px;line-height:30px;margin-top:2px}
+.kv .v.lead{font-size:32px;line-height:38px}
+.kv .d{font-size:13px;margin-top:2px}
+.kvs{display:flex;flex-direction:column;gap:18px}
+.up{color:var(--positive)}.down{color:var(--negative)}.same{color:var(--muted)}
 
-/* Reminders */
-.rem.overdue .grow b{color:var(--warn)}
+/* ---------- Ghi chú ---------- */
+.note{padding:14px 0;border-top:1px solid var(--rule)}
+.note:first-child{border-top:0;padding-top:2px}
+.note .txt{white-space:pre-wrap;overflow-wrap:anywhere;font-size:15px;line-height:23px}
+.note .meta{display:flex;align-items:center;gap:2px;margin-top:6px;color:var(--muted);font-size:12px}
+.note .meta .when{flex:1}
+.tag{color:var(--accent-deep);font-weight:500}
+.tags{display:flex;flex-direction:column}
+.tags button{display:flex;align-items:center;height:34px;padding:0 10px;border:0;border-radius:10px;background:none;cursor:pointer;color:var(--text);text-align:left}
+.tags button span:first-child{flex:1}
+.tags button.on{background:var(--active)}
+@media (max-width:1099px){.tags{flex-direction:row;overflow-x:auto;gap:6px}.tags button{flex:none;background:var(--raised)}.tags button span:first-child{margin-right:6px}}
 
-/* Week planner */
-.day{border:1px solid var(--line);border-radius:12px;padding:10px 12px;margin-bottom:10px;background:var(--surface)}
-.day.today{border-color:var(--accent);box-shadow:0 0 0 2px var(--accent-soft)}
-.day h3{display:flex;justify-content:space-between;margin-bottom:4px}
-.day form{margin-top:6px}
-@media (min-width:700px){.days{display:grid;grid-template-columns:repeat(2,1fr);gap:10px}.day{margin-bottom:0}}
+/* ---------- Tabs ---------- */
+.tabs{display:flex;gap:18px;border-bottom:1px solid var(--rule);margin-bottom:8px;overflow-x:auto}
+.tabs button{flex:none;border:0;background:none;padding:8px 0 10px;color:var(--muted);cursor:pointer;border-bottom:2px solid transparent;margin-bottom:-1px}
+.tabs button.on{color:var(--text);border-color:var(--accent);font-weight:500}
 
-/* Week summary */
-.nav{display:flex;align-items:center;gap:8px;margin-bottom:12px}
-.nav .lbl{flex:1;text-align:center;font-weight:600}
-.kpis{display:grid;grid-template-columns:repeat(2,1fr);gap:10px;margin-bottom:14px}
-@media (min-width:640px){.kpis{grid-template-columns:repeat(4,1fr)}}
-.kpi{background:var(--surface);border:1px solid var(--line);border-radius:var(--radius);padding:12px}
-.kpi .v{font-size:22px;font-weight:700;letter-spacing:-.02em;margin:2px 0}
-.up{color:var(--accent);font-weight:600}.down{color:var(--warn);font-weight:600}.same{color:var(--muted)}
-.scroll-x{overflow-x:auto;-webkit-overflow-scrolling:touch}
-table.wk{border-collapse:collapse;width:100%;font-size:13.5px;min-width:560px}
-.wk th,.wk td{padding:7px 6px;text-align:center;border-bottom:1px solid var(--line)}
-.wk th{font-size:12px;color:var(--muted);font-weight:600}
-.wk td:first-child,.wk th:first-child{text-align:left}
-.mark{display:inline-grid;place-items:center;width:22px;height:22px;border-radius:6px;background:var(--surface-2);color:transparent;font-size:12px;font-weight:800}
-.mark.on{background:var(--accent);color:var(--accent-ink)}
-.bars{display:flex;align-items:flex-end;gap:8px;height:140px;padding-top:8px}
-.bars .col{flex:1;display:flex;flex-direction:column;align-items:center;gap:4px;height:100%;min-width:0}
-.bars .pair{flex:1;width:100%;display:flex;align-items:flex-end;justify-content:center;gap:3px}
-.bars .b{width:42%;max-width:22px;border-radius:5px 5px 2px 2px;background:var(--accent);min-height:2px}
-.bars .b.prev{background:var(--bar-prev)}
-.bars .b.one{width:70%;max-width:34px}
-.bars .lb{font-size:11px;color:var(--muted);white-space:nowrap}
-.legend{display:flex;gap:14px;font-size:12px;color:var(--muted);margin-top:8px}
-.legend i{display:inline-block;width:10px;height:10px;border-radius:3px;margin-right:5px;vertical-align:-1px}
-.insights{margin:0;padding-left:18px}
-.insights li{margin:4px 0}
+/* ---------- Tuần ---------- */
+.strip4{display:grid;grid-template-columns:repeat(4,1fr);background:var(--surface);border-radius:var(--radius-card)}
+.strip4>div{padding:18px 20px;border-left:1px solid var(--rule)}
+.strip4>div:first-child{border-left:0}
+@media (max-width:759px){.strip4{grid-template-columns:1fr 1fr}.strip4>div:nth-child(3){border-left:0}.strip4>div:nth-child(n+3){border-top:1px solid var(--rule)}}
+.wk{display:grid;grid-template-columns:minmax(140px,1fr) repeat(7,26px) 56px 76px 104px 116px;align-items:center;column-gap:10px}
+.wk.h{color:var(--muted);font-size:12px;padding-bottom:8px}
+.wk.r{min-height:48px;border-top:1px solid var(--rule);padding:6px 0}
+.wk .c{text-align:center}.wk .n{text-align:right}
+.mk{display:inline-grid;place-items:center;width:22px;height:22px;border-radius:6px;background:var(--active);color:transparent}
+.mk.on{background:var(--accent);color:var(--accent-ink)}
+.wk .l2{display:none}
+@media (max-width:899px){
+  .wk.h{display:none}
+  .wk{grid-template-columns:1fr auto;row-gap:6px}
+  .wk .c,.wk .hide{display:none}
+  .wk .l2{display:flex;grid-column:1 / -1;align-items:center;gap:10px;flex-wrap:wrap;color:var(--muted);font-size:13px}
+  .wk .l2 .marks{display:flex;gap:4px}
+}
+.chart{width:100%;min-height:190px}
+.chart svg{display:block;overflow:visible}
+.chart .g{stroke:var(--grid);stroke-width:1}
+.chart .base{stroke:var(--control);stroke-width:1.5}
+.chart .tk{fill:var(--muted);font-size:11px}
+.chart .c{fill:var(--accent)}
+.chart .p{fill:var(--prev)}
+.chart .ln{fill:none;stroke:var(--accent);stroke-width:2;stroke-linejoin:round}
+.chart .ar{fill:var(--accent);opacity:.12}
+.chart .dot{fill:var(--accent)}
+.chart .lab{fill:var(--text);font-size:12px}
+.legend{display:flex;gap:14px;color:var(--muted);font-size:12px}
+.legend i{display:inline-block;width:9px;height:9px;border-radius:2px;margin-right:6px;vertical-align:0}
+.insights{margin:0;padding-left:18px;line-height:22px}
+.insights li+li{margin-top:6px}
 
-/* Vault */
-.lockbox{max-width:420px;margin:10px auto;text-align:center}
-.lockbox .big{font-size:42px}
-.warnbox{background:var(--warn-soft);color:var(--ink);border-radius:10px;padding:10px 12px;font-size:13px;text-align:left}
-.pw{font-family:ui-monospace,SFMono-Regular,Menlo,monospace;font-size:13px;overflow-wrap:anywhere}
+/* ---------- Cài đặt ---------- */
+.set{display:grid;grid-template-columns:minmax(0,4fr) minmax(0,8fr);gap:24px;padding:28px 0;border-top:1px solid var(--rule)}
+.set:first-of-type{border-top:0;padding-top:0}
+.set .lbl h2{font-size:16px;line-height:22px;font-weight:600}
+.set .lbl p{color:var(--muted);margin-top:6px;line-height:21px}
+@media (max-width:899px){.set{grid-template-columns:1fr;gap:12px}}
+.steps{margin:0 0 18px;padding-left:20px;line-height:22px}
+.steps li+li{margin-top:6px}
+.status{display:flex;align-items:center;gap:10px;padding:12px 14px;border-radius:14px;background:var(--raised);margin-bottom:14px}
+.status .dot{width:8px;height:8px;border-radius:999px;background:var(--accent);flex:none}
+.status.err .dot{background:var(--negative)}
+.status.busy .dot{background:var(--prev)}
 
-/* Dialog / toast */
-dialog{border:1px solid var(--line);border-radius:16px;background:var(--surface);color:var(--ink);padding:16px;width:min(520px,calc(100vw - 32px));max-height:85vh}
-dialog::backdrop{background:rgba(0,0,0,.35)}
-dialog h2{margin-bottom:12px}
-label.f{display:block;font-size:12.5px;color:var(--muted);margin-bottom:8px}
-label.f>input,label.f>textarea,label.f>select{margin-top:3px;color:var(--ink)}
-#toast{position:fixed;left:50%;transform:translateX(-50%);bottom:calc(88px + env(safe-area-inset-bottom));z-index:20;
-  background:var(--ink);color:var(--bg);padding:9px 14px;border-radius:10px;font-size:13.5px;opacity:0;pointer-events:none;transition:opacity .2s;max-width:calc(100vw - 32px)}
-#toast.show{opacity:1}
-@media (min-width:900px){#toast{bottom:24px}}
+/* ---------- Két ---------- */
+.pw{font-variant-numeric:tabular-nums;letter-spacing:.02em}
+.lockp{display:grid;grid-template-columns:minmax(0,1fr) minmax(0,1fr);gap:28px;align-items:start}
+@media (max-width:759px){.lockp{grid-template-columns:1fr}}
+.notice{background:var(--neg-soft);color:var(--neg-ink);border-radius:12px;padding:10px 14px;font-size:13px;line-height:19px;margin-bottom:16px}
+
+/* ---------- Hộp thoại & thông báo ---------- */
+dialog{border:0;border-radius:22px;background:var(--ground);color:var(--text);padding:22px;width:min(520px,calc(100vw - 32px));max-height:86vh;box-shadow:0 18px 48px rgba(0,0,0,.18)}
+dialog::backdrop{background:rgba(17,19,17,.4)}
+dialog h2{font-size:18px;line-height:24px;font-weight:600;margin-bottom:16px}
+#toast{position:fixed;left:50%;bottom:calc(84px + env(safe-area-inset-bottom));transform:translate(-50%,8px);z-index:20;background:var(--text);color:var(--ground);
+  padding:10px 16px;border-radius:999px;font-size:13px;opacity:0;pointer-events:none;transition:opacity .18s,transform .18s;max-width:calc(100vw - 32px);box-shadow:0 8px 24px rgba(0,0,0,.18)}
+#toast.show{opacity:1;transform:translate(-50%,0)}
+@media (min-width:960px){#toast{bottom:28px;left:calc(50% + 112px)}}
+@media (prefers-reduced-motion:reduce){*{transition:none!important}}
 .hidden{display:none!important}
 </style>
 </head>
 <body>
 
-<header class="top">
-  <div class="brand">
-    <img src="icons/icon.svg" alt="">
-    <div>
-      <h1>Small Compounding</h1>
-      <div class="muted" id="today-label"></div>
-    </div>
-  </div>
-  <button class="icon" data-a="openSettings" title="Cài đặt, sao lưu" aria-label="Cài đặt">⚙️</button>
+<aside class="side" aria-label="Điều hướng">
+  <div class="brand"><img src="icons/icon.svg" alt=""><b>Small Compounding</b></div>
+  <nav class="nav" id="sideNav"></nav>
+  <div class="foot nav" id="sideFoot"></div>
+</aside>
+
+<header class="topbar">
+  <img class="mark" src="icons/icon.svg" alt="">
+  <span class="name" id="topName"></span>
+  <span id="topActs" class="row" style="gap:0"></span>
 </header>
 
-<main id="view"></main>
+<main><div class="canvas" id="view"></div></main>
 
-<nav class="tabs" aria-label="Mục">
-  <button data-a="tab" data-id="today"><span class="ic">☀️</span>Hôm nay</button>
-  <button data-a="tab" data-id="notes"><span class="ic">💭</span>Ghi chú</button>
-  <button data-a="tab" data-id="tasks"><span class="ic">✅</span>Việc</button>
-  <button data-a="tab" data-id="reading"><span class="ic">📚</span>Sách</button>
-  <button data-a="tab" data-id="vault"><span class="ic">🔒</span>Mật khẩu</button>
-  <button data-a="tab" data-id="week"><span class="ic">📈</span>Tuần</button>
-</nav>
+<nav class="bottombar" id="bottomNav" aria-label="Điều hướng"></nav>
 
 <dialog id="dlg"></dialog>
 <input type="file" id="importFile" accept="application/json,.json" class="hidden">
-<div id="toast" role="status"></div>
+<div id="toast" role="status" aria-live="polite"></div>
 
+<script src="icons.js"></script>
 <script>
 'use strict';
 /* =========================================================
-   Small Compounding — dữ liệu lưu trên chính thiết bị (localStorage).
-   Két mật khẩu được mã hóa AES-256-GCM, khóa sinh từ mật khẩu chính bằng PBKDF2.
+   Small Compounding
+   - Dữ liệu lưu trên máy (localStorage).
+   - Két mật khẩu: AES-256-GCM, khóa sinh từ mật khẩu chính bằng PBKDF2.
+   - Đồng bộ: toàn bộ dữ liệu được mã hóa trên máy rồi lưu vào một gist bí mật
+     trong tài khoản GitHub của người dùng. Mỗi bản ghi có dấu thời gian `u`
+     để gộp dữ liệu giữa hai máy; bản ghi bị xóa được ghi lại trong `del`.
    ========================================================= */
 
 // ---------- Tiện ích ----------
 const $ = s => document.querySelector(s);
 const uid = () => Math.random().toString(36).slice(2, 9) + Date.now().toString(36);
+const now = () => Date.now();
 const pad = n => String(n).padStart(2, '0');
 const ymd = d => `${d.getFullYear()}-${pad(d.getMonth() + 1)}-${pad(d.getDate())}`;
 const parseYmd = s => { const [y, m, d] = s.split('-').map(Number); return new Date(y, m - 1, d); };
@@ -234,16 +322,24 @@ const esc = s => String(s ?? '').replace(/[&<>"']/g, c => ({ '&': '&amp;', '<': 
 const DOW = ['T2', 'T3', 'T4', 'T5', 'T6', 'T7', 'CN'];
 const DOW_FULL = ['Thứ Hai', 'Thứ Ba', 'Thứ Tư', 'Thứ Năm', 'Thứ Sáu', 'Thứ Bảy', 'Chủ Nhật'];
 const dowIdx = d => (d.getDay() + 6) % 7;
-const fmtDay = s => { const d = parseYmd(s); return `${DOW[dowIdx(d)]} ${d.getDate()}/${d.getMonth() + 1}`; };
 const fmtDM = d => `${d.getDate()}/${d.getMonth() + 1}`;
-const fmtTime = iso => { const d = new Date(iso); return `${pad(d.getHours())}:${pad(d.getMinutes())} · ${fmtDay(ymd(d))}`; };
-const fmtMin = m => { m = Math.round(+m || 0); if (!m) return '0p'; const h = Math.floor(m / 60), r = m % 60; return h ? `${h}h${r ? ' ' + r + 'p' : ''}` : `${r}p`; };
+const fmtDay = s => { const d = parseYmd(s); return `${DOW[dowIdx(d)]} ${fmtDM(d)}`; };
+const fmtTime = t => { const d = new Date(t); return `${pad(d.getHours())}:${pad(d.getMinutes())} · ${fmtDay(ymd(d))}`; };
+const fmtClock = t => { const d = new Date(t); return `${pad(d.getHours())}:${pad(d.getMinutes())}`; };
+const fmtMin = m => { m = Math.round(+m || 0); if (!m) return '0p'; const h = Math.floor(m / 60), r = m % 60; return h ? `${h}h${r ? '\u00a0' + r + 'p' : ''}` : `${r}p`; };
+const fmtMinHtml = m => {
+  m = Math.round(+m || 0); const h = Math.floor(m / 60), r = m % 60;
+  if (!h) return `<span class="num">${r}</span><span class="unit">p</span>`;
+  return `<span class="num">${h}</span><span class="unit">h</span>${r ? `&nbsp;<span class="num">${r}</span><span class="unit">p</span>` : ''}`;
+};
+const fmtShort = m => m < 60 ? `${m}p` : (m % 60 ? `${(m / 60).toFixed(1).replace('.', ',')}h` : `${m / 60}h`);
 const todayStr = () => ymd(new Date());
 const localDT = d => `${ymd(d)}T${pad(d.getHours())}:${pad(d.getMinutes())}`;
+const ic = (n, s = 18) => `<svg class="i" width="${s}" height="${s}" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">${ICONS[n] || ''}</svg>`;
 
 function toast(msg) {
   const t = $('#toast'); t.textContent = msg; t.classList.add('show');
-  clearTimeout(toast._t); toast._t = setTimeout(() => t.classList.remove('show'), 2400);
+  clearTimeout(toast._t); toast._t = setTimeout(() => t.classList.remove('show'), 2600);
 }
 function download(name, text, type) {
   const url = URL.createObjectURL(new Blob([text], { type }));
@@ -256,30 +352,41 @@ function lsSet(k, v) { try { localStorage.setItem(k, v); return true; } catch (e
 
 // ---------- Dữ liệu ----------
 const KEY = 'small-compounding.v1';
+const COLLS = ['notes', 'tasks', 'readings', 'reminders'];
 function defaultState() {
   return {
-    v: 1, notes: [], tasks: [], readings: [], reminders: [], logs: {}, vault: null,
+    v: 2, notes: [], tasks: [], readings: [], reminders: [], logs: {}, vault: null, del: {}, habitsU: 0,
     habits: [
-      { id: 'health', name: 'Sức khỏe', icon: '❤️', target: 15 },
-      { id: 'gym', name: 'Gym / Tập luyện', icon: '💪', target: 45 },
-      { id: 'read', name: 'Đọc sách', icon: '📖', target: 30 }
+      { id: 'health', name: 'Sức khỏe', target: 15 },
+      { id: 'gym', name: 'Gym / Tập luyện', target: 45 },
+      { id: 'read', name: 'Đọc sách', target: 30 }
     ]
   };
 }
-function load() {
-  const raw = lsGet(KEY);
-  if (raw) { try { return Object.assign(defaultState(), JSON.parse(raw)); } catch (e) { } }
-  return defaultState();
+function normalize(s) {
+  s = Object.assign(defaultState(), s || {});
+  COLLS.forEach(c => { if (!Array.isArray(s[c])) s[c] = []; s[c].forEach(x => { if (!x.u) x.u = x.created || x.added || 1; }); });
+  if (!s.del || typeof s.del !== 'object') s.del = {};
+  if (!s.logs || typeof s.logs !== 'object') s.logs = {};
+  return s;
 }
-let S = load();
-function save() { if (!lsSet(KEY, JSON.stringify(S))) toast('⚠️ Không lưu được dữ liệu trên thiết bị này'); }
+let S = normalize(JSON.parse(lsGet(KEY) || 'null'));
+function saveLocal() { if (!lsSet(KEY, JSON.stringify(S))) toast('Không lưu được dữ liệu trên thiết bị này'); }
+function save() { saveLocal(); scheduleSync(); }
+const touch = o => { o.u = now(); return o; };
+const remove = (coll, id) => { S[coll] = S[coll].filter(x => x.id !== id); S.del[id] = now(); };
+function logEntry(date, hid) {
+  S.logs[date] = S.logs[date] || {};
+  return S.logs[date][hid] = S.logs[date][hid] || {};
+}
 
 // ---------- Trạng thái giao diện ----------
 let tab = lsGet('sc.tab') || 'today';
 let weekOff = 0, planOff = 0, readFilter = 'reading', noteQuery = '', vaultQuery = '';
-let V = null;               // két đang mở: { key, items }
-const revealed = new Set(); // mật khẩu đang hiện
-let lastActive = Date.now();
+let V = null;                // két đang mở: { key, items }
+const revealed = new Set();  // mật khẩu đang hiện
+let lastActive = now();
+let CH = {};                 // dữ liệu biểu đồ của màn hình hiện tại
 
 // ---------- Thống kê ----------
 function weekDays(ws) { const a = []; for (let i = 0; i < 7; i++) a.push(ymd(addDays(ws, i))); return a; }
@@ -295,19 +402,26 @@ function weekStats(ws) {
       if (e.done) habits[h.id].days++; else all = false;
       m += mm;
     });
+    S.tasks.forEach(t => { if (t.date === d) m += +t.min || 0; });
     if (all) perfect++;
     return m;
   });
   const tasks = S.tasks.filter(t => set.has(t.date));
   const taskMin = tasks.reduce((a, t) => a + (+t.min || 0), 0);
-  const habitMin = dayMin.reduce((a, b) => a + b, 0);
+  const totalMin = dayMin.reduce((a, b) => a + b, 0);
   return {
-    days, habits, dayMin, habitMin, taskMin, totalMin: habitMin + taskMin, perfect,
+    days, habits, dayMin, taskMin, totalMin, habitMin: totalMin - taskMin, perfect,
     checks: Object.values(habits).reduce((a, h) => a + h.days, 0),
     tasksDone: tasks.filter(t => t.done).length, tasksTotal: tasks.length,
     booksDone: S.readings.filter(r => r.finished && set.has(r.finished)).length,
     notes: S.notes.filter(n => set.has(ymd(new Date(n.created)))).length
   };
+}
+function totalUpTo(endYmd) {
+  let m = 0;
+  for (const d in S.logs) if (d <= endYmd) for (const h in S.logs[d]) m += +S.logs[d][h].min || 0;
+  S.tasks.forEach(t => { if (t.date <= endYmd) m += +t.min || 0; });
+  return m;
 }
 function streak(hid) {
   let d = new Date(), n = 0;
@@ -315,109 +429,148 @@ function streak(hid) {
   while (S.logs[ymd(d)]?.[hid]?.done) { n++; d = addDays(d, -1); }
   return n;
 }
+// Màu nói tốt/xấu: với mọi chỉ số ở đây, tăng là tốt. Không đổi thì màu xám.
 function delta(cur, prev, fmt = x => x) {
-  const diff = cur - prev;
   if (!cur && !prev) return '<span class="same">—</span>';
-  if (diff === 0) return '<span class="same">= tuần trước</span>';
-  const pct = prev ? ` (${diff > 0 ? '+' : ''}${Math.round(diff / prev * 100)}%)` : '';
-  return `<span class="${diff > 0 ? 'up' : 'down'}">${diff > 0 ? '↑ +' : '↓ −'}${fmt(Math.abs(diff))}${pct}</span>`;
+  const diff = cur - prev;
+  if (diff === 0) return '<span class="same">bằng tuần trước</span>';
+  if (!prev) return `<span class="up">+${fmt(cur)} (mới)</span> <span class="same">so với tuần trước</span>`;
+  const pct = Math.round(diff / prev * 100);
+  return `<span class="${diff > 0 ? 'up' : 'down'}">${diff > 0 ? '+' : '−'}${fmt(Math.abs(diff))} (${diff > 0 ? '+' : '−'}${Math.abs(pct)}%)</span> <span class="same">so với tuần trước</span>`;
+}
+
+// ---------- Khung điều hướng ----------
+const TABS = [
+  { id: 'today', label: 'Hôm nay', icon: 'sun', title: 'Hôm nay' },
+  { id: 'tasks', label: 'Việc', icon: 'checklist', title: 'Việc trong tuần' },
+  { id: 'notes', label: 'Ghi chú', icon: 'notes', title: 'Ghi chú' },
+  { id: 'reading', label: 'Sách', icon: 'book', title: 'Sách và bài đọc' },
+  { id: 'week', label: 'Tuần', icon: 'chart-bar', title: 'Tổng kết tuần' },
+  { id: 'vault', label: 'Mật khẩu', icon: 'lock', title: 'Mật khẩu' },
+  { id: 'settings', label: 'Cài đặt', icon: 'settings', title: 'Cài đặt' }
+];
+function renderShell() {
+  const navBtn = t => `<button data-a="tab" data-id="${t.id}" class="${tab === t.id ? 'on' : ''}" ${tab === t.id ? 'aria-current="page"' : ''}>${ic(t.icon)}<span>${t.label}</span></button>`;
+  $('#sideNav').innerHTML = TABS.slice(0, 6).map(navBtn).join('');
+  $('#sideFoot').innerHTML = `${syncRowHtml()}${navBtn(TABS[6])}`;
+  $('#bottomNav').innerHTML = TABS.slice(0, 5).map(navBtn).join('');
+  $('#topName').textContent = TABS.find(t => t.id === tab).title;
+  $('#topActs').innerHTML = `
+    <button class="ib ${syncIconClass()}" data-a="syncTap" aria-label="Đồng bộ" title="${esc(syncLabel())}">${ic(syncState === 'error' ? 'cloud-off' : 'cloud')}</button>
+    <button class="ib ${tab === 'vault' ? 'on' : ''}" data-a="tab" data-id="vault" aria-label="Mật khẩu">${ic('lock')}</button>
+    <button class="ib ${tab === 'settings' ? 'on' : ''}" data-a="tab" data-id="settings" aria-label="Cài đặt">${ic('settings')}</button>`;
+}
+function head(title, sub, acts = '', greet = false) {
+  return `<div class="head"><div class="t"><h1 class="${greet ? 'greet' : ''}">${title}</h1>${sub ? `<p class="sub">${sub}</p>` : ''}</div>${acts ? `<div class="acts">${acts}</div>` : ''}</div>`;
+}
+function weekNav(off, action) {
+  const ws = addDays(weekStart(new Date()), off * 7);
+  return `<button class="ib" data-a="${action}" data-id="-1" aria-label="Tuần trước">${ic('chevron-left')}</button>
+    <span class="num" style="min-width:96px;text-align:center">${fmtDM(ws)} – ${fmtDM(addDays(ws, 6))}</span>
+    <button class="ib" data-a="${action}" data-id="1" aria-label="Tuần sau" ${action === 'weekNav' && off >= 0 ? 'disabled style="opacity:.35"' : ''}>${ic('chevron-right')}</button>
+    ${off !== 0 ? `<button class="btn sm" data-a="${action}" data-id="0">Tuần này</button>` : ''}`;
 }
 
 // ---------- Màn hình: Hôm nay ----------
+function greeting() { const h = new Date().getHours(); return h < 11 ? 'Chào buổi sáng' : h < 13 ? 'Chào buổi trưa' : h < 18 ? 'Chào buổi chiều' : 'Chào buổi tối'; }
 function vToday() {
-  const t = todayStr(), log = S.logs[t] || {};
-  const done = S.habits.filter(h => log[h.id]?.done).length;
-  const ws = weekStats(weekStart(new Date()));
+  const t = todayStr(), log = S.logs[t] || {}, d = new Date();
+  const ws = weekStart(d), cur = weekStats(ws), prev = weekStats(addDays(ws, -7));
+  const leftH = S.habits.filter(h => !log[h.id]?.done).length;
+  const tasks = S.tasks.filter(x => x.date === t);
+  const leftT = tasks.filter(x => !x.done).length;
+  const parts = [leftT && `${leftT} việc`, leftH && `${leftH} thói quen`].filter(Boolean);
+  const fact = parts.length ? `Còn ${parts.join(' và ')} hôm nay.` : (S.habits.length || tasks.length ? 'Hôm nay đã xong hết.' : 'Bắt đầu một ngày nhỏ.');
+  const ti = dowIdx(d);
+
   const habits = S.habits.map(h => {
-    const e = log[h.id] || {}, st = streak(h.id);
-    const pct = Math.min(100, Math.round((ws.habits[h.id]?.min || 0) / (h.target * 7 || 1) * 100));
-    return `<div class="habit ${e.done ? 'done' : ''}">
-      <button class="check ${e.done ? 'on' : ''}" data-a="toggleHabit" data-id="${h.id}" aria-label="Check ${esc(h.name)}">${e.done ? '✓' : ''}</button>
-      <div class="grow">
-        <div class="hb-name">${esc(h.icon)} ${esc(h.name)} ${st ? `<span class="streak small">🔥 ${st} ngày</span>` : ''}</div>
-        <div class="muted small">Tuần này ${fmtMin(ws.habits[h.id]?.min)} / ${fmtMin(h.target * 7)}</div>
-        <div class="progress"><i style="width:${pct}%"></i></div>
-      </div>
-      <div class="mins">
-        <input type="number" inputmode="numeric" min="0" step="5" placeholder="0" value="${e.min || ''}" data-c="habitMin" data-id="${h.id}" aria-label="Số phút ${esc(h.name)}">
-        <span>phút</span>
-        <button class="btn plain sm" data-a="addMin" data-id="${h.id}">+15</button>
-      </div>
+    const e = log[h.id] || {}, st = streak(h.id), w = cur.habits[h.id];
+    return `<div class="habit">
+      <button class="ck ${e.done ? 'on' : ''}" data-a="toggleHabit" data-id="${h.id}" aria-pressed="${!!e.done}" aria-label="Đã làm ${esc(h.name)}">${ic('check', 20)}</button>
+      <div style="min-width:0"><div class="nm">${esc(h.name)}</div>
+        <div class="mt">${st ? `Chuỗi ${st} ngày · ` : ''}tuần này <span class="num">${fmtMin(w.min)}</span> / <span class="num">${fmtMin(h.target * 7)}</span></div></div>
+      <div class="strip" aria-label="Tuần này: ${w.days} trên 7 ngày">${w.marks.map((m, i) => `<i class="${m ? 'on' : ''} ${i === ti ? 'today' : ''}" title="${DOW[i]}"></i>`).join('')}</div>
+      <div class="mins"><input type="number" inputmode="numeric" min="0" step="5" placeholder="0" value="${e.min || ''}" data-c="habitMin" data-id="${h.id}" aria-label="Số phút ${esc(h.name)} hôm nay"><span class="u">phút</span>
+        <button class="btn sm" data-a="addMin" data-id="${h.id}">+15</button></div>
     </div>`;
   }).join('');
-  const tasks = S.tasks.filter(x => x.date === t);
   const overdue = S.tasks.filter(x => x.date < t && !x.done);
-  return `
-  <section class="card">
-    <div class="card-head"><h2>Daily check</h2><span class="chip ${done === S.habits.length && done ? 'on' : ''}">${done}/${S.habits.length} hoàn thành</span>
-      <button class="icon" data-a="editHabits" title="Sửa danh sách thói quen">✏️</button></div>
-    ${habits || '<div class="empty">Chưa có thói quen nào. Bấm ✏️ để thêm.</div>'}
-  </section>
-  <div class="grid2">
-    <section class="card">
-      <div class="card-head"><h2>Việc hôm nay</h2><span class="chip">${tasks.filter(x => x.done).length}/${tasks.length}</span></div>
-      <form data-f="addTask" class="row"><input type="hidden" name="date" value="${t}">
-        <input type="text" name="title" placeholder="Thêm việc cần làm…" autocomplete="off" required><button class="btn">Thêm</button></form>
-      <ul class="list" style="margin-top:6px">${tasks.map(x => taskItem(x)).join('') || '<li class="empty">Chưa có việc nào cho hôm nay.</li>'}</ul>
-      ${overdue.length ? `<div class="row" style="margin-top:8px"><span class="grow small down">${overdue.length} việc quá hạn chưa xong</span><button class="btn ghost sm" data-a="rollover">Dời sang hôm nay</button></div>` : ''}
+
+  return head(`${greeting()}. ${fact}`, `${DOW_FULL[ti]}, ${d.getDate()}/${d.getMonth() + 1}/${d.getFullYear()} · tuần này đã tích lũy ${fmtMin(cur.totalMin)}`,
+    `<button class="btn primary" data-a="focusNote">${ic('pencil', 16)}Ghi nhanh</button>`, true) + `
+  <div class="grid">
+    <section class="panel s8">
+      <div class="ph"><h2>Daily check</h2><span class="meta num">${S.habits.length - leftH}/${S.habits.length} đã xong</span>
+        <button class="ib" data-a="tab" data-id="settings" aria-label="Sửa thói quen" title="Sửa thói quen">${ic('pencil', 16)}</button></div>
+      ${habits || '<div class="empty">Chưa có thói quen nào. Thêm trong Cài đặt.</div>'}
     </section>
-    <section class="card">
-      <div class="card-head"><h2>Ghi nhanh</h2></div>
-      <form data-f="addNote" class="stack">
-        <textarea name="text" placeholder="Đang nghĩ gì? Dùng #tag để phân loại (⌘/Ctrl + Enter để lưu)" required></textarea>
-        <div class="row"><span class="grow muted small">${S.notes.length} ghi chú đã lưu</span><button class="btn">Lưu ghi chú</button></div>
+    <section class="panel s4">
+      <div class="ph"><h2>Tuần này</h2><button class="btn text sm" data-a="tab" data-id="week">Tổng kết ${ic('arrow-right', 14)}</button></div>
+      <div class="kvs">
+        <div class="kv"><span class="k">Tổng thời gian</span><span class="v lead">${fmtMinHtml(cur.totalMin)}</span><span class="d">${delta(cur.totalMin, prev.totalMin, fmtMin)}</span></div>
+        <div class="kv"><span class="k">Lượt check</span><span class="v"><span class="num">${cur.checks}</span><span class="unit">/${S.habits.length * 7}</span></span><span class="d">${delta(cur.checks, prev.checks)}</span></div>
+      </div>
+    </section>
+    <section class="panel s6">
+      <div class="ph"><h2>Việc hôm nay</h2><span class="meta num">${tasks.length - leftT}/${tasks.length}</span></div>
+      <form data-f="addTask" class="row"><input type="hidden" name="date" value="${t}">
+        <input type="text" name="title" placeholder="Thêm việc cần làm" autocomplete="off" required aria-label="Việc mới"><button class="btn primary">Thêm</button></form>
+      <ul class="list" style="margin-top:6px">${tasks.map(x => taskItem(x)).join('') || '<li class="empty" style="margin-top:8px">Chưa có việc nào cho hôm nay.</li>'}</ul>
+      ${overdue.length ? `<div class="row" style="margin-top:10px"><span class="grow down small">${overdue.length} việc quá hạn chưa xong</span><button class="btn sm" data-a="rollover">Dời sang hôm nay</button></div>` : ''}
+    </section>
+    <section class="panel s6">${remindersHtml()}</section>
+    <section class="panel s12">
+      <div class="ph"><h2>Ghi nhanh</h2><span class="meta">${S.notes.length} ghi chú</span></div>
+      <form data-f="addNote" class="row" style="align-items:flex-end;flex-wrap:wrap">
+        <textarea name="text" id="quickNote" class="grow" style="flex:1 1 280px;min-height:72px" placeholder="Đang nghĩ gì? Dùng #tag để phân loại. ⌘ hoặc Ctrl + Enter để lưu." required aria-label="Ghi chú mới"></textarea>
+        <button class="btn primary">Lưu ghi chú</button>
       </form>
     </section>
-  </div>
-  <section class="card" style="margin-top:14px">${remindersHtml()}</section>`;
+  </div>`;
 }
-function taskItem(x, opts = {}) {
-  return `<li class="item ${x.done ? 'done' : ''}">
-    <button class="check sm ${x.done ? 'on' : ''}" data-a="toggleTask" data-id="${x.id}" aria-label="Hoàn thành">${x.done ? '✓' : ''}</button>
-    <span class="grow">${esc(x.title)}${opts.showDate ? ` <span class="chip">${fmtDay(x.date)}</span>` : ''}</span>
-    <input class="min-in" type="number" inputmode="numeric" min="0" step="5" placeholder="phút" value="${x.min || ''}" data-c="taskMin" data-id="${x.id}" title="Thời gian đã làm (phút)">
-    <button class="icon" data-a="moveTask" data-id="${x.id}" title="Dời sang ngày hôm sau">→</button>
-    <button class="icon" data-a="delTask" data-id="${x.id}" title="Xóa">✕</button>
+function taskItem(x) {
+  return `<li class="li ${x.done ? 'done' : ''}">
+    <button class="ck ${x.done ? 'on' : ''}" data-a="toggleTask" data-id="${x.id}" aria-pressed="${!!x.done}" aria-label="Hoàn thành ${esc(x.title)}">${ic('check', 15)}</button>
+    <span class="grow t1">${esc(x.title)}</span>
+    <span class="mins"><input type="number" inputmode="numeric" min="0" step="5" placeholder="0" value="${x.min || ''}" data-c="taskMin" data-id="${x.id}" aria-label="Số phút đã làm"><span class="u">p</span></span>
+    <button class="ib" data-a="moveTask" data-id="${x.id}" title="Dời sang ngày hôm sau" aria-label="Dời sang ngày hôm sau">${ic('arrow-right', 16)}</button>
+    <button class="ib" data-a="delTask" data-id="${x.id}" title="Xóa" aria-label="Xóa việc">${ic('trash', 16)}</button>
   </li>`;
 }
 
 // ---------- Nhắc nhở ----------
 const REPEAT = { none: 'Một lần', daily: 'Hằng ngày', weekly: 'Hằng tuần' };
 function remindersHtml() {
-  const now = Date.now();
+  const t = now();
   const list = S.reminders.filter(r => !r.done).sort((a, b) => a.at.localeCompare(b.at));
-  const canNotify = 'Notification' in window;
-  const perm = canNotify ? Notification.permission : 'unsupported';
+  const perm = 'Notification' in window ? Notification.permission : 'unsupported';
   return `
-    <div class="card-head"><h2>Nhắc nhở</h2>
-      ${perm === 'default' ? '<button class="btn ghost sm" data-a="askNotify">🔔 Bật thông báo</button>' : ''}
-      ${perm === 'granted' ? '<span class="chip on">🔔 Đã bật</span>' : ''}</div>
+    <div class="ph"><h2>Nhắc nhở</h2>
+      ${perm === 'default' ? `<button class="btn text sm" data-a="askNotify">${ic('bell', 15)}Bật thông báo</button>` : ''}</div>
     <form data-f="addReminder" class="row wrap">
-      <input type="text" name="title" placeholder="Nhắc tôi…" autocomplete="off" required style="flex:2 1 180px">
-      <input type="datetime-local" name="at" value="${localDT(new Date(now + 3600e3))}" required style="flex:1 1 170px">
-      <select name="repeat" style="flex:0 1 120px">${Object.entries(REPEAT).map(([k, v]) => `<option value="${k}">${v}</option>`).join('')}</select>
-      <button class="btn">Thêm</button>
+      <input type="text" name="title" placeholder="Nhắc tôi" autocomplete="off" required style="flex:2 1 150px" aria-label="Nội dung nhắc nhở">
+      <input type="datetime-local" name="at" value="${localDT(new Date(t + 3600e3))}" required style="flex:1 1 180px" aria-label="Thời gian">
+      <select name="repeat" style="flex:0 1 118px" aria-label="Lặp lại">${Object.entries(REPEAT).map(([k, v]) => `<option value="${k}">${v}</option>`).join('')}</select>
+      <button class="btn primary">Thêm</button>
     </form>
     <ul class="list" style="margin-top:6px">
-      ${list.map(r => `<li class="item rem ${new Date(r.at).getTime() <= now ? 'overdue' : ''}">
-        <button class="check sm" data-a="doneReminder" data-id="${r.id}" aria-label="Xong"></button>
-        <span class="grow">${esc(r.title)}<br><b class="small">${fmtTime(r.at)}</b> ${r.repeat !== 'none' ? `<span class="chip">${REPEAT[r.repeat]}</span>` : ''}</span>
-        <button class="icon" data-a="icsReminder" data-id="${r.id}" title="Thêm vào Lịch (Calendar) để được báo kể cả khi đóng app">📅</button>
-        <button class="icon" data-a="delReminder" data-id="${r.id}" title="Xóa">✕</button></li>`).join('') || '<li class="empty">Không có nhắc nhở nào.</li>'}
+      ${list.map(r => { const late = new Date(r.at).getTime() <= t; return `<li class="li">
+        <button class="ck" data-a="doneReminder" data-id="${r.id}" aria-label="Đã xong ${esc(r.title)}">${ic('check', 15)}</button>
+        <span class="grow"><span class="t1">${esc(r.title)}</span><div class="t2 num ${late ? 'down' : ''}">${fmtTime(r.at)}${r.repeat !== 'none' ? ` · ${REPEAT[r.repeat]}` : ''}${late ? ' · đã đến giờ' : ''}</div></span>
+        <button class="ib" data-a="icsReminder" data-id="${r.id}" title="Thêm vào app Lịch để được báo cả khi đã đóng app" aria-label="Thêm vào app Lịch">${ic('calendar-plus', 16)}</button>
+        <button class="ib" data-a="delReminder" data-id="${r.id}" title="Xóa" aria-label="Xóa nhắc nhở">${ic('trash', 16)}</button></li>`; }).join('') || '<li class="empty" style="margin-top:8px">Không có nhắc nhở nào sắp tới.</li>'}
     </ul>
-    <p class="muted small" style="margin:8px 0 0">Mẹo: bấm 📅 để đưa nhắc nhở vào app Lịch của iPhone/Mac — Lịch sẽ báo đúng giờ kể cả khi bạn không mở Small Compounding.</p>`;
+`;
 }
 function checkReminders() {
-  const now = Date.now(); let changed = false;
+  const t = now(); let changed = false;
   S.reminders.forEach(r => {
-    if (!r.done && !r.notified && new Date(r.at).getTime() <= now) {
-      r.notified = true; changed = true; notify('⏰ ' + r.title);
-    }
+    if (!r.done && !r.notified && new Date(r.at).getTime() <= t) { r.notified = true; touch(r); changed = true; notify(r.title); }
   });
   if (changed) { save(); if (tab === 'today') render(); }
 }
 async function notify(text) {
-  toast(text);
+  toast('Nhắc nhở: ' + text);
   if (navigator.vibrate) navigator.vibrate(200);
   if (!('Notification' in window) || Notification.permission !== 'granted') return;
   try {
@@ -436,40 +589,46 @@ function icsFor(r) {
 }
 
 // ---------- Màn hình: Ghi chú ----------
+const TAG_RE = /#[\p{L}\p{N}_-]+/gu;
 function noteTextHtml(t) { return esc(t).replace(/(^|\s)(#[\p{L}\p{N}_-]+)/gu, '$1<span class="tag">$2</span>'); }
 function allTags() {
   const m = {};
-  S.notes.forEach(n => (n.text.match(/#[\p{L}\p{N}_-]+/gu) || []).forEach(t => m[t.toLowerCase()] = (m[t.toLowerCase()] || 0) + 1));
-  return Object.entries(m).sort((a, b) => b[1] - a[1]).slice(0, 15);
+  S.notes.forEach(n => (n.text.match(TAG_RE) || []).forEach(t => { t = t.toLowerCase(); m[t] = (m[t] || 0) + 1; }));
+  return Object.entries(m).sort((a, b) => b[1] - a[1]).slice(0, 20);
 }
 function noteListHtml() {
   const q = noteQuery.trim().toLowerCase();
-  const list = S.notes.filter(n => !q || n.text.toLowerCase().includes(q))
-    .sort((a, b) => (b.pinned - a.pinned) || (b.created - a.created));
-  return list.map(n => `<div class="note ${n.pinned ? 'pinned' : ''}">
+  const list = S.notes.filter(n => !q || n.text.toLowerCase().includes(q)).sort((a, b) => (b.pinned - a.pinned) || (b.created - a.created));
+  return list.map(n => `<article class="note">
       <div class="txt">${noteTextHtml(n.text)}</div>
-      <div class="meta"><span class="grow muted small">${n.pinned ? '📌 ' : ''}${fmtTime(new Date(n.created).toISOString())}</span>
-        <button class="icon" data-a="pinNote" data-id="${n.id}" title="${n.pinned ? 'Bỏ ghim' : 'Ghim'}">📌</button>
-        <button class="icon" data-a="copyNote" data-id="${n.id}" title="Sao chép">⧉</button>
-        <button class="icon" data-a="editNote" data-id="${n.id}" title="Sửa">✏️</button>
-        <button class="icon" data-a="delNote" data-id="${n.id}" title="Xóa">✕</button></div>
-    </div>`).join('') || `<div class="empty">${q ? 'Không tìm thấy ghi chú phù hợp.' : 'Chưa có ghi chú nào. Viết suy nghĩ đầu tiên ở trên nhé.'}</div>`;
+      <div class="meta"><span class="when num">${n.pinned ? 'Đã ghim · ' : ''}${fmtTime(n.created)}</span>
+        <button class="ib ${n.pinned ? 'on' : ''}" data-a="pinNote" data-id="${n.id}" aria-label="${n.pinned ? 'Bỏ ghim' : 'Ghim'}" title="${n.pinned ? 'Bỏ ghim' : 'Ghim'}">${ic('pin', 16)}</button>
+        <button class="ib" data-a="copyNote" data-id="${n.id}" aria-label="Sao chép" title="Sao chép">${ic('copy', 16)}</button>
+        <button class="ib" data-a="editNote" data-id="${n.id}" aria-label="Sửa" title="Sửa">${ic('pencil', 16)}</button>
+        <button class="ib" data-a="delNote" data-id="${n.id}" aria-label="Xóa" title="Xóa">${ic('trash', 16)}</button></div>
+    </article>`).join('') || `<div class="empty">${q ? 'Không có ghi chú nào khớp với tìm kiếm.' : 'Chưa có ghi chú nào. Viết suy nghĩ đầu tiên ở trên.'}</div>`;
 }
 function vNotes() {
   const tags = allTags();
-  return `
-  <section class="card">
-    <form data-f="addNote" class="stack">
-      <textarea name="text" placeholder="Đang nghĩ gì? Dùng #tag để phân loại (⌘/Ctrl + Enter để lưu)" required></textarea>
-      <div class="row"><span class="grow"></span><button class="btn">Lưu ghi chú</button></div>
-    </form>
-  </section>
-  <section class="card">
-    <div class="card-head"><h2>Ghi chú của tôi</h2><span class="chip">${S.notes.length}</span></div>
-    <input type="search" id="noteQ" placeholder="Tìm trong ghi chú…" value="${esc(noteQuery)}" style="margin-bottom:8px">
-    ${tags.length ? `<div class="seg">${tags.map(([t, c]) => `<button class="chip ${noteQuery.toLowerCase() === t ? 'on' : ''}" data-a="tagFilter" data-id="${esc(t)}">${esc(t)} · ${c}</button>`).join('')}</div>` : ''}
-    <div id="noteList">${noteListHtml()}</div>
-  </section>`;
+  return head('Ghi chú', `${S.notes.length} ghi chú · ${tags.length} thẻ`) + `
+  <div class="grid">
+    <div class="s8 stack">
+      <section class="panel">
+        <form data-f="addNote" class="stack" style="gap:10px">
+          <textarea name="text" id="quickNote" placeholder="Đang nghĩ gì? Dùng #tag để phân loại. ⌘ hoặc Ctrl + Enter để lưu." required aria-label="Ghi chú mới"></textarea>
+          <div class="row"><span class="grow"></span><button class="btn primary">Lưu ghi chú</button></div>
+        </form>
+      </section>
+      <section class="panel"><div id="noteList">${noteListHtml()}</div></section>
+    </div>
+    <section class="panel s4">
+      <div class="ph"><h2>Tìm</h2></div>
+      <input type="search" id="noteQ" placeholder="Tìm trong ghi chú" value="${esc(noteQuery)}" aria-label="Tìm trong ghi chú">
+      <div class="ph" style="margin:18px 0 6px"><h2>Thẻ</h2></div>
+      ${tags.length ? `<div class="tags">${tags.map(([t, c]) => `<button class="${noteQuery.toLowerCase() === t ? 'on' : ''}" data-a="tagFilter" data-id="${esc(t)}"><span class="tag">${esc(t)}</span><span class="num muted">${c}</span></button>`).join('')}</div>`
+        : '<div class="empty">Viết #tênthẻ trong ghi chú để nhóm chúng lại.</div>'}
+    </section>
+  </div>`;
 }
 
 // ---------- Màn hình: Việc trong tuần ----------
@@ -477,25 +636,26 @@ function vTasks() {
   const ws = addDays(weekStart(new Date()), planOff * 7), days = weekDays(ws), t = todayStr();
   const wk = S.tasks.filter(x => days.includes(x.date));
   const doneN = wk.filter(x => x.done).length;
-  return `
-  <div class="nav"><button class="btn plain sm" data-a="planNav" data-id="-1">◀</button>
-    <div class="lbl">${fmtDM(ws)} – ${fmtDM(addDays(ws, 6))}${planOff === 0 ? ' · Tuần này' : ''}</div>
-    ${planOff !== 0 ? '<button class="btn ghost sm" data-a="planNav" data-id="0">Hôm nay</button>' : ''}
-    <button class="btn plain sm" data-a="planNav" data-id="1">▶</button></div>
-  <section class="card">
-    <div class="row"><span class="grow"><b>${doneN}/${wk.length}</b> việc hoàn thành · ${fmtMin(wk.reduce((a, x) => a + (+x.min || 0), 0))} đã làm</span></div>
-    <div class="progress"><i style="width:${wk.length ? Math.round(doneN / wk.length * 100) : 0}%"></i></div>
-  </section>
-  <div class="days">
-    ${days.map((d, i) => {
-      const items = S.tasks.filter(x => x.date === d);
-      return `<div class="day ${d === t ? 'today' : ''}">
-        <h3><span>${DOW_FULL[i]} · ${fmtDM(parseYmd(d))}${d === t ? ' · Hôm nay' : ''}</span><span class="muted small">${items.filter(x => x.done).length}/${items.length}</span></h3>
-        <ul class="list">${items.map(x => taskItem(x)).join('')}</ul>
-        <form data-f="addTask" class="row"><input type="hidden" name="date" value="${d}">
-          <input type="text" name="title" placeholder="+ Thêm việc" autocomplete="off" required><button class="btn sm">Thêm</button></form>
-      </div>`;
-    }).join('')}
+  const overdue = S.tasks.filter(x => x.date < t && !x.done).sort((a, b) => a.date.localeCompare(b.date));
+  return head('Việc trong tuần', `<span class="num">${doneN}/${wk.length}</span> việc đã xong · <span class="num">${fmtMin(wk.reduce((a, x) => a + (+x.min || 0), 0))}</span> đã làm`, weekNav(planOff, 'planNav')) + `
+  <div class="grid">
+    <div class="s8 stack">
+      ${days.map((d, i) => {
+        const items = S.tasks.filter(x => x.date === d);
+        return `<section class="panel" ${d === t ? 'style="box-shadow:inset 0 0 0 1.5px var(--accent)"' : ''}>
+          <div class="ph"><h2>${DOW_FULL[i]} ${fmtDM(parseYmd(d))}${d === t ? ' · hôm nay' : ''}</h2><span class="meta num">${items.length ? `${items.filter(x => x.done).length}/${items.length}` : ''}</span></div>
+          ${items.length ? `<ul class="list">${items.map(taskItem).join('')}</ul>` : ''}
+          <form data-f="addTask" class="row" style="margin-top:${items.length ? 8 : 0}px"><input type="hidden" name="date" value="${d}">
+            <input type="text" name="title" placeholder="Thêm việc cho ${DOW_FULL[i].toLowerCase()}" autocomplete="off" required aria-label="Việc mới cho ${DOW_FULL[i]}"><button class="btn">Thêm</button></form>
+        </section>`;
+      }).join('')}
+    </div>
+    <section class="panel s4">
+      <div class="ph"><h2>Quá hạn chưa xong</h2><span class="meta num">${overdue.length}</span></div>
+      ${overdue.length ? `<ul class="list">${overdue.slice(0, 6).map(x => `<li class="li"><span class="grow"><span class="t1">${esc(x.title)}</span><div class="t2 num">${fmtDay(x.date)}</div></span></li>`).join('')}</ul>
+        <button class="btn primary" style="width:100%;margin-top:12px" data-a="rollover">Dời ${overdue.length} việc sang hôm nay</button>`
+        : '<div class="empty">Không có việc nào bị bỏ lại.</div>'}
+    </section>
   </div>`;
 }
 
@@ -504,30 +664,35 @@ const RSTAT = { reading: 'Đang đọc', todo: 'Muốn đọc', done: 'Đã đ�
 function vReading() {
   const cnt = k => S.readings.filter(r => k === 'all' || r.status === k).length;
   const list = S.readings.filter(r => readFilter === 'all' || r.status === readFilter).sort((a, b) => b.added - a.added);
-  return `
-  <section class="card">
-    <div class="card-head"><h2>Thêm sách / bài đọc</h2></div>
-    <form data-f="addReading" class="stack">
-      <input type="text" name="title" placeholder="Tên sách hoặc bài viết" required autocomplete="off">
-      <div class="row wrap"><input type="text" name="author" placeholder="Tác giả (không bắt buộc)" style="flex:1 1 160px">
-        <input type="url" name="link" placeholder="Link (không bắt buộc)" style="flex:1 1 160px"></div>
-      <div class="row"><select name="status" style="flex:1">${Object.entries(RSTAT).map(([k, v]) => `<option value="${k}" ${k === 'todo' ? 'selected' : ''}>${v}</option>`).join('')}</select><button class="btn">Thêm</button></div>
-    </form>
-  </section>
-  <section class="card">
-    <div class="seg">${[...Object.entries(RSTAT), ['all', 'Tất cả']].map(([k, v]) => `<button class="chip ${readFilter === k ? 'on' : ''}" data-a="readFilter" data-id="${k}">${v} · ${cnt(k)}</button>`).join('')}</div>
-    <ul class="list">${list.map(r => `<li class="item">
-      <span class="grow"><b>${esc(r.title)}</b>${r.author ? ` <span class="muted">— ${esc(r.author)}</span>` : ''}
-        ${r.link ? `<br><a class="small" href="${esc(r.link)}" target="_blank" rel="noopener">${esc(r.link.replace(/^https?:\/\//, '').slice(0, 48))}</a>` : ''}
-        ${r.note ? `<br><span class="small muted">${esc(r.note)}</span>` : ''}
-        ${r.finished ? `<br><span class="small up">✓ Đọc xong ${fmtDay(r.finished)}</span>` : ''}</span>
-      <select data-c="readStatus" data-id="${r.id}" style="width:auto;padding:5px 8px;font-size:13px">${Object.entries(RSTAT).map(([k, v]) => `<option value="${k}" ${r.status === k ? 'selected' : ''}>${v}</option>`).join('')}</select>
-      <button class="icon" data-a="noteReading" data-id="${r.id}" title="Ghi chú cảm nhận">✏️</button>
-      <button class="icon" data-a="delReading" data-id="${r.id}" title="Xóa">✕</button></li>`).join('') || '<li class="empty">Danh sách trống.</li>'}</ul>
-  </section>`;
+  const year = String(new Date().getFullYear());
+  const doneYear = S.readings.filter(r => r.finished && r.finished.startsWith(year)).length;
+  return head('Sách và bài đọc', `<span class="num">${cnt('reading')}</span> đang đọc · <span class="num">${cnt('todo')}</span> muốn đọc · <span class="num">${doneYear}</span> đã đọc xong năm nay`) + `
+  <div class="grid">
+    <section class="panel s8">
+      <div class="tabs" role="tablist">${[...Object.entries(RSTAT), ['all', 'Tất cả']].map(([k, v]) => `<button role="tab" aria-selected="${readFilter === k}" class="${readFilter === k ? 'on' : ''}" data-a="readFilter" data-id="${k}">${v} <span class="num muted">${cnt(k)}</span></button>`).join('')}</div>
+      <ul class="list">${list.map(r => `<li class="li" style="align-items:flex-start;padding:12px 0">
+        <span class="grow"><span class="t1" style="font-weight:500">${esc(r.title)}</span>
+          <div class="t2">${[r.author && esc(r.author), r.finished && `Đọc xong ${fmtDay(r.finished)}`].filter(Boolean).join(' · ')}</div>
+          ${r.link ? `<div class="t2"><a href="${esc(r.link)}" target="_blank" rel="noopener">${esc(r.link.replace(/^https?:\/\//, '').slice(0, 48))}</a></div>` : ''}
+          ${r.note ? `<div class="t2" style="color:var(--text);margin-top:6px;white-space:pre-wrap">${esc(r.note)}</div>` : ''}</span>
+        <select data-c="readStatus" data-id="${r.id}" style="width:auto;height:32px" aria-label="Trạng thái ${esc(r.title)}">${Object.entries(RSTAT).map(([k, v]) => `<option value="${k}" ${r.status === k ? 'selected' : ''}>${v}</option>`).join('')}</select>
+        <button class="ib" data-a="noteReading" data-id="${r.id}" title="Ghi cảm nhận" aria-label="Ghi cảm nhận">${ic('pencil', 16)}</button>
+        <button class="ib" data-a="delReading" data-id="${r.id}" title="Xóa" aria-label="Xóa">${ic('trash', 16)}</button></li>`).join('') || '<li class="empty" style="margin-top:8px">Chưa có gì trong mục này.</li>'}</ul>
+    </section>
+    <section class="panel s4">
+      <div class="ph"><h2>Thêm sách hoặc bài viết</h2></div>
+      <form data-f="addReading">
+        <label class="f">Tên<input type="text" name="title" required autocomplete="off"></label>
+        <label class="f">Tác giả<input type="text" name="author" autocomplete="off"></label>
+        <label class="f">Link<input type="url" name="link" placeholder="https://"></label>
+        <label class="f">Trạng thái<select name="status">${Object.entries(RSTAT).map(([k, v]) => `<option value="${k}" ${k === 'todo' ? 'selected' : ''}>${v}</option>`).join('')}</select></label>
+        <button class="btn primary" style="width:100%">Thêm vào danh sách</button>
+      </form>
+    </section>
+  </div>`;
 }
 
-// ---------- Két mật khẩu (mã hóa) ----------
+// ---------- Mã hóa ----------
 const enc = new TextEncoder(), dec = new TextDecoder();
 const PBKDF2_ITER = 600000;
 function b64(buf) { const u = new Uint8Array(buf); let s = ''; for (let i = 0; i < u.length; i += 0x8000) s += String.fromCharCode.apply(null, u.subarray(i, i + 0x8000)); return btoa(s); }
@@ -536,15 +701,14 @@ async function deriveKey(pw, salt, iter) {
   const base = await crypto.subtle.importKey('raw', enc.encode(pw), 'PBKDF2', false, ['deriveKey']);
   return crypto.subtle.deriveKey({ name: 'PBKDF2', salt, iterations: iter, hash: 'SHA-256' }, base, { name: 'AES-GCM', length: 256 }, false, ['encrypt', 'decrypt']);
 }
-async function sealVault() {
-  const iv = crypto.getRandomValues(new Uint8Array(12));
-  const ct = await crypto.subtle.encrypt({ name: 'AES-GCM', iv }, V.key, enc.encode(JSON.stringify(V.items)));
-  S.vault.iv = b64(iv); S.vault.ct = b64(ct); save();
-}
+async function aesSeal(key, text) { const iv = crypto.getRandomValues(new Uint8Array(12)); const ct = await crypto.subtle.encrypt({ name: 'AES-GCM', iv }, key, enc.encode(text)); return { iv: b64(iv), ct: b64(ct) }; }
+async function aesOpen(key, iv, ct) { return dec.decode(await crypto.subtle.decrypt({ name: 'AES-GCM', iv: unb64(iv) }, key, unb64(ct))); }
+
+// ---------- Két mật khẩu ----------
+async function sealVault() { Object.assign(S.vault, await aesSeal(V.key, JSON.stringify(V.items))); S.vault.u = now(); save(); }
 async function openVault(pw) {
   const key = await deriveKey(pw, unb64(S.vault.salt), S.vault.iter);
-  const pt = await crypto.subtle.decrypt({ name: 'AES-GCM', iv: unb64(S.vault.iv) }, key, unb64(S.vault.ct));
-  V = { key, items: JSON.parse(dec.decode(pt)) };
+  V = { key, items: JSON.parse(await aesOpen(key, S.vault.iv, S.vault.ct)) };
 }
 async function createVault(pw, items = []) {
   const salt = crypto.getRandomValues(new Uint8Array(16));
@@ -555,171 +719,373 @@ async function createVault(pw, items = []) {
 function lockVault() { V = null; revealed.clear(); }
 function genPassword(len = 18) {
   const chars = 'ABCDEFGHJKLMNPQRSTUVWXYZabcdefghijkmnopqrstuvwxyz23456789!@#$%&*-_=+?';
-  const r = crypto.getRandomValues(new Uint32Array(len));
-  return Array.from(r, x => chars[x % chars.length]).join('');
+  return Array.from(crypto.getRandomValues(new Uint32Array(len)), x => chars[x % chars.length]).join('');
 }
 function vVault() {
-  if (!window.crypto || !crypto.subtle) return `<section class="card lockbox"><div class="big">⚠️</div><p>Trình duyệt chặn tính năng mã hóa vì trang không chạy qua <b>https</b>. Hãy mở app từ địa chỉ https (ví dụ GitHub Pages).</p></section>`;
-  if (!S.vault) return `
-  <section class="card lockbox">
-    <div class="big">🔐</div><h2>Tạo két mật khẩu</h2>
-    <p class="muted small">Mọi mật khẩu được mã hóa AES-256 ngay trên máy bạn, khóa bằng một <b>mật khẩu chính</b>.</p>
-    <form data-f="vaultCreate" class="stack">
-      <input type="password" name="pw" placeholder="Mật khẩu chính (ít nhất 8 ký tự)" minlength="8" required autocomplete="new-password">
-      <input type="password" name="pw2" placeholder="Nhập lại mật khẩu chính" minlength="8" required autocomplete="new-password">
-      <div class="warnbox">⚠️ Nếu quên mật khẩu chính, <b>không ai</b> (kể cả bạn) khôi phục được dữ liệu trong két. Hãy ghi nó ra giấy và cất kỹ.</div>
-      <button class="btn">Tạo két</button>
-    </form>
-  </section>`;
-  if (!V) return `
-  <section class="card lockbox">
-    <div class="big">🔒</div><h2>Két đang khóa</h2>
-    <form data-f="vaultUnlock" class="stack" style="margin-top:12px">
-      <input type="password" name="pw" placeholder="Mật khẩu chính" required autocomplete="current-password" autofocus>
-      <button class="btn">Mở khóa</button>
-    </form>
-    <p class="muted small">Két tự khóa sau 3 phút không dùng hoặc khi bạn rời app.</p>
-  </section>`;
-  const q = vaultQuery.trim().toLowerCase();
-  return `
-  <section class="card">
-    <div class="card-head"><h2>🔓 Két mật khẩu</h2>
-      <button class="btn sm" data-a="vaultEdit">+ Thêm</button>
-      <button class="btn plain sm" data-a="vaultLock">Khóa</button></div>
-    <input type="search" id="vaultQ" placeholder="Tìm theo tên, tài khoản…" value="${esc(vaultQuery)}" style="margin-bottom:6px">
-    <ul class="list" id="vaultList">${vaultListHtml(q)}</ul>
-  </section>
-  <p class="center muted small" style="text-align:center"><button class="btn ghost sm" data-a="vaultChangePw">Đổi mật khẩu chính</button></p>`;
+  if (!window.crypto || !crypto.subtle) return head('Mật khẩu', '') + `<section class="panel"><div class="notice">Trình duyệt chặn mã hóa vì trang không chạy qua https. Hãy mở app từ địa chỉ https (GitHub Pages).</div></section>`;
+  const why = `<div><h2 style="font-size:16px;font-weight:600;margin-bottom:8px">Cách két bảo vệ dữ liệu</h2>
+    <ul class="steps" style="margin:0"><li>Mã hóa AES-256 ngay trên máy, khóa bằng mật khẩu chính.</li><li>Không ai đọc được két nếu không có mật khẩu chính, kể cả GitHub khi đồng bộ.</li><li>Tự khóa sau 3 phút không dùng hoặc khi rời app.</li></ul></div>`;
+  if (!S.vault) return head('Mật khẩu', 'Tạo két để lưu mật khẩu và ghi chú bí mật.') + `
+  <section class="panel"><div class="lockp">
+    <form data-f="vaultCreate">
+      <div class="notice">Nếu quên mật khẩu chính, không ai khôi phục được dữ liệu trong két. Hãy ghi nó ra giấy và cất kỹ.</div>
+      <label class="f">Mật khẩu chính<input type="password" name="pw" minlength="8" required autocomplete="new-password" aria-describedby="pwh"><span class="help" id="pwh">Ít nhất 8 ký tự.</span></label>
+      <label class="f">Nhập lại mật khẩu chính<input type="password" name="pw2" minlength="8" required autocomplete="new-password"></label>
+      <button class="btn primary">Tạo két</button>
+    </form>${why}</div></section>`;
+  if (!V) return head('Mật khẩu', 'Két đang khóa. Nhập mật khẩu chính để mở.') + `
+  <section class="panel"><div class="lockp">
+    <form data-f="vaultUnlock">
+      <label class="f">Mật khẩu chính<input type="password" name="pw" required autocomplete="current-password" autofocus></label>
+      <button class="btn primary">${ic('lock', 16)}Mở khóa</button>
+    </form>${why}</div></section>`;
+  return head('Mật khẩu', `<span class="num">${V.items.length}</span> mục · đang mở, tự khóa sau 3 phút không dùng`,
+    `<button class="btn" data-a="vaultLock">${ic('lock', 16)}Khóa</button><button class="btn primary" data-a="vaultEdit">${ic('plus', 16)}Thêm</button>`) + `
+  <div class="grid">
+    <section class="panel s8">
+      <input type="search" id="vaultQ" placeholder="Tìm theo tên hoặc tài khoản" value="${esc(vaultQuery)}" aria-label="Tìm mật khẩu" style="margin-bottom:8px">
+      <ul class="list" id="vaultList">${vaultListHtml()}</ul>
+    </section>
+    <section class="panel s4">
+      <div class="ph"><h2>Két</h2></div>
+      <p class="muted" style="line-height:21px;margin-bottom:14px">Đổi mật khẩu chính sẽ mã hóa lại toàn bộ két. Trên máy còn lại, hãy mở két bằng mật khẩu mới sau khi đồng bộ.</p>
+      <button class="btn" data-a="vaultChangePw">${ic('key', 16)}Đổi mật khẩu chính</button>
+    </section>
+  </div>`;
 }
-function vaultListHtml(q = vaultQuery.trim().toLowerCase()) {
+function vaultListHtml() {
+  const q = vaultQuery.trim().toLowerCase();
   const items = V.items.filter(it => !q || `${it.site} ${it.user} ${it.note}`.toLowerCase().includes(q)).sort((a, b) => a.site.localeCompare(b.site));
-  return items.map(it => `<li class="item">
-    <span class="grow"><b>${esc(it.site)}</b>${it.user ? `<br><span class="small muted">${esc(it.user)}</span>` : ''}
-      <br><span class="pw">${revealed.has(it.id) ? esc(it.pass) : '••••••••••'}</span>
-      ${it.note ? `<br><span class="small muted">${esc(it.note)}</span>` : ''}</span>
-    <button class="icon" data-a="vaultReveal" data-id="${it.id}" title="Hiện/ẩn">${revealed.has(it.id) ? '🙈' : '👁'}</button>
-    ${it.user ? `<button class="icon" data-a="vaultCopyUser" data-id="${it.id}" title="Sao chép tài khoản">👤</button>` : ''}
-    <button class="icon" data-a="vaultCopyPass" data-id="${it.id}" title="Sao chép mật khẩu">🔑</button>
-    <button class="icon" data-a="vaultEdit" data-id="${it.id}" title="Sửa">✏️</button></li>`).join('') || `<li class="empty">${q ? 'Không tìm thấy.' : 'Két trống. Bấm “+ Thêm” để lưu mật khẩu đầu tiên.'}</li>`;
+  return items.map(it => `<li class="li">
+    <span class="grow"><span class="t1" style="font-weight:500">${esc(it.site)}</span>
+      <div class="t2">${it.user ? esc(it.user) + ' · ' : ''}<span class="pw">${revealed.has(it.id) ? esc(it.pass) : '••••••••••'}</span></div>
+      ${it.note ? `<div class="t2">${esc(it.note)}</div>` : ''}</span>
+    <button class="ib" data-a="vaultReveal" data-id="${it.id}" aria-label="${revealed.has(it.id) ? 'Ẩn' : 'Hiện'} mật khẩu" title="${revealed.has(it.id) ? 'Ẩn' : 'Hiện'}">${ic(revealed.has(it.id) ? 'eye-off' : 'eye', 16)}</button>
+    ${it.user ? `<button class="ib" data-a="vaultCopyUser" data-id="${it.id}" aria-label="Sao chép tài khoản" title="Sao chép tài khoản">${ic('user', 16)}</button>` : ''}
+    <button class="ib" data-a="vaultCopyPass" data-id="${it.id}" aria-label="Sao chép mật khẩu" title="Sao chép mật khẩu">${ic('key', 16)}</button>
+    <button class="ib" data-a="vaultEdit" data-id="${it.id}" aria-label="Sửa" title="Sửa">${ic('pencil', 16)}</button></li>`).join('')
+    || `<li class="empty">${q ? 'Không tìm thấy.' : 'Két trống. Bấm Thêm để lưu mật khẩu đầu tiên.'}</li>`;
 }
 async function copyText(t, label) {
-  try { await navigator.clipboard.writeText(t); toast(`Đã sao chép ${label}`); }
-  catch (e) { toast('Không sao chép được'); }
+  try { await navigator.clipboard.writeText(t); toast(`Đã sao chép ${label}`); } catch (e) { toast('Không sao chép được'); }
 }
 
 // ---------- Màn hình: Tổng kết tuần ----------
 function vWeek() {
   const ws = addDays(weekStart(new Date()), weekOff * 7);
   const cur = weekStats(ws), prev = weekStats(addDays(ws, -7));
-  const maxDay = Math.max(1, ...cur.dayMin, ...prev.dayMin);
-  const trend = []; for (let i = 7; i >= 0; i--) { const w = addDays(ws, -7 * i); trend.push({ w, s: weekStats(w) }); }
-  const maxTrend = Math.max(1, ...trend.map(x => x.s.totalMin));
-  const possible = S.habits.length * 7;
+  const weeks = []; for (let i = 7; i >= 0; i--) { const w = addDays(ws, -7 * i); weeks.push({ w, total: totalUpTo(ymd(addDays(w, 6))) }); }
+  CH = { daily: { cur: cur.dayMin, prev: prev.dayMin }, cum: weeks };
+  const diff = cur.totalMin - prev.totalMin;
+  const finding = !cur.totalMin && !prev.totalMin ? 'Chưa có thời gian nào được ghi trong tuần này và tuần trước.'
+    : diff === 0 ? `Tổng ${fmtMin(cur.totalMin)}, bằng tuần trước.`
+    : `Tổng ${fmtMin(cur.totalMin)}, ${diff > 0 ? 'nhiều hơn' : 'ít hơn'} tuần trước ${fmtMin(Math.abs(diff))}.`;
 
   const insights = [];
   S.habits.forEach(h => {
     const a = cur.habits[h.id], b = prev.habits[h.id], d = a.min - b.min;
-    if (d > 0) insights.push(`${h.icon} <b>${esc(h.name)}</b> tăng <span class="up">${fmtMin(d)}</span> so với tuần trước.`);
-    else if (d < 0) insights.push(`${h.icon} <b>${esc(h.name)}</b> giảm <span class="down">${fmtMin(-d)}</span> — thử đặt nhắc nhở cố định nhé.`);
-    if (a.min >= h.target * 7 && h.target) insights.push(`🎯 Đạt mục tiêu tuần cho <b>${esc(h.name)}</b> (${fmtMin(a.min)} / ${fmtMin(h.target * 7)}).`);
+    if (d > 0) insights.push(`<b>${esc(h.name)}</b>: ${fmtMin(a.min)}, <span class="up">nhiều hơn tuần trước ${fmtMin(d)}</span>.`);
+    else if (d < 0) insights.push(`<b>${esc(h.name)}</b>: ${fmtMin(a.min)}, <span class="down">ít hơn tuần trước ${fmtMin(-d)}</span>. Thử đặt một nhắc nhở cố định.`);
+    if (h.target && a.min >= h.target * 7) insights.push(`<b>${esc(h.name)}</b> đạt mục tiêu tuần (${fmtMin(a.min)} trên ${fmtMin(h.target * 7)}).`);
   });
-  if (cur.perfect) insights.push(`⭐ Có <b>${cur.perfect}</b> ngày hoàn thành đủ mọi thói quen.`);
-  if (!insights.length) insights.push('Chưa có đủ dữ liệu để so sánh. Hãy check mỗi ngày — những bước nhỏ sẽ cộng dồn 🌱');
+  if (cur.perfect) insights.push(`Có <b>${cur.perfect}</b> ngày làm đủ mọi thói quen.`);
+  if (!insights.length) insights.push('Chưa đủ dữ liệu để so sánh. Check mỗi ngày, những bước nhỏ sẽ cộng dồn.');
+  const total = weeks[weeks.length - 1].total;
+  const first = Object.keys(S.logs).sort()[0];
 
-  return `
-  <div class="nav"><button class="btn plain sm" data-a="weekNav" data-id="-1">◀</button>
-    <div class="lbl">${fmtDM(ws)} – ${fmtDM(addDays(ws, 6))}${weekOff === 0 ? ' · Tuần này' : ''}</div>
-    ${weekOff !== 0 ? '<button class="btn ghost sm" data-a="weekNav" data-id="0">Tuần này</button>' : ''}
-    <button class="btn plain sm" data-a="weekNav" data-id="1" ${weekOff >= 0 ? 'disabled style="opacity:.4"' : ''}>▶</button></div>
-
-  <div class="kpis">
-    <div class="kpi"><div class="muted small">Tổng thời gian</div><div class="v">${fmtMin(cur.totalMin)}</div><div class="small">${delta(cur.totalMin, prev.totalMin, fmtMin)}</div></div>
-    <div class="kpi"><div class="muted small">Lượt check ✓</div><div class="v">${cur.checks}<span class="muted small">/${possible}</span></div><div class="small">${delta(cur.checks, prev.checks)}</div></div>
-    <div class="kpi"><div class="muted small">Việc hoàn thành</div><div class="v">${cur.tasksDone}<span class="muted small">/${cur.tasksTotal}</span></div><div class="small">${delta(cur.tasksDone, prev.tasksDone)}</div></div>
-    <div class="kpi"><div class="muted small">Sách đọc xong · Ghi chú</div><div class="v">${cur.booksDone} · ${cur.notes}</div><div class="small">${delta(cur.booksDone + cur.notes, prev.booksDone + prev.notes)}</div></div>
-  </div>
-
-  <section class="card">
-    <div class="card-head"><h2>Check-mark theo ngày</h2></div>
-    <div class="scroll-x"><table class="wk">
-      <thead><tr><th>Thói quen</th>${DOW.map(d => `<th>${d}</th>`).join('')}<th>Ngày</th><th>Thời gian</th><th>Tuần trước</th><th>Chênh lệch</th></tr></thead>
-      <tbody>${S.habits.map(h => {
-        const a = cur.habits[h.id], b = prev.habits[h.id];
-        return `<tr><td>${esc(h.icon)} ${esc(h.name)}</td>${a.marks.map(m => `<td><span class="mark ${m ? 'on' : ''}">✓</span></td>`).join('')}
-          <td><b>${a.days}</b>/7</td><td><b>${fmtMin(a.min)}</b></td><td class="muted">${fmtMin(b.min)} · ${b.days}/7</td><td class="small">${delta(a.min, b.min, fmtMin)}</td></tr>`;
+  return head('Tổng kết tuần', finding, weekNav(weekOff, 'weekNav')) + `
+  <div class="stack">
+    <section class="strip4" aria-label="Chỉ số tuần">
+      <div class="kv"><span class="k">Tổng thời gian</span><span class="v lead">${fmtMinHtml(cur.totalMin)}</span><span class="d">${delta(cur.totalMin, prev.totalMin, fmtMin)}</span></div>
+      <div class="kv"><span class="k">Lượt check</span><span class="v"><span class="num">${cur.checks}</span><span class="unit">/${S.habits.length * 7}</span></span><span class="d">${delta(cur.checks, prev.checks)}</span></div>
+      <div class="kv"><span class="k">Việc đã xong</span><span class="v"><span class="num">${cur.tasksDone}</span><span class="unit">/${cur.tasksTotal}</span></span><span class="d">${delta(cur.tasksDone, prev.tasksDone)}</span></div>
+      <div class="kv"><span class="k">Sách đọc xong</span><span class="v"><span class="num">${cur.booksDone}</span></span><span class="d">${delta(cur.booksDone, prev.booksDone)}</span></div>
+    </section>
+    <section class="panel">
+      <div class="ph"><h2>Check-mark theo ngày</h2></div>
+      <div class="wk h"><span>Thói quen</span>${DOW.map(d => `<span class="c">${d}</span>`).join('')}<span class="n">Ngày</span><span class="n">Thời gian</span><span class="n">Tuần trước</span><span class="n">Chênh lệch</span></div>
+      ${S.habits.map(h => {
+        const a = cur.habits[h.id], b = prev.habits[h.id], d = a.min - b.min;
+        const dl = !a.min && !b.min ? '<span class="same">—</span>' : d === 0 ? '<span class="same">0p</span>' : `<span class="${d > 0 ? 'up' : 'down'}">${d > 0 ? '+' : '−'}${fmtMin(Math.abs(d))}</span>`;
+        const marks = a.marks.map((m, i) => `<span class="mk ${m ? 'on' : ''}" title="${DOW[i]}">${ic('check', 13)}</span>`);
+        return `<div class="wk r"><span style="font-weight:500">${esc(h.name)}</span>${marks.map(m => `<span class="c">${m}</span>`).join('')}
+          <span class="n num hide">${a.days}/7</span><span class="n num">${fmtMin(a.min)}</span><span class="n num muted hide">${fmtMin(b.min)}</span><span class="n num hide">${dl}</span>
+          <span class="l2"><span class="marks">${marks.join('')}</span><span class="num">${a.days}/7 ngày · tuần trước ${fmtMin(b.min)}</span>${dl}</span></div>`;
       }).join('')}
-      <tr><td><b>Việc (tasks)</b></td>${cur.days.map(d => { const it = S.tasks.filter(x => x.date === d); return `<td class="small muted">${it.length ? `${it.filter(x => x.done).length}/${it.length}` : '·'}</td>`; }).join('')}
-        <td><b>${cur.tasksDone}</b>/${cur.tasksTotal}</td><td><b>${fmtMin(cur.taskMin)}</b></td><td class="muted">${fmtMin(prev.taskMin)} · ${prev.tasksDone}/${prev.tasksTotal}</td><td class="small">${delta(cur.taskMin, prev.taskMin, fmtMin)}</td></tr>
-      </tbody></table></div>
+      <div class="wk r"><span style="font-weight:500">Việc</span>${cur.days.map(d => { const it = S.tasks.filter(x => x.date === d); return `<span class="c num small muted">${it.length ? `${it.filter(x => x.done).length}/${it.length}` : '—'}</span>`; }).join('')}
+        <span class="n num hide">${cur.tasksDone}/${cur.tasksTotal}</span><span class="n num">${fmtMin(cur.taskMin)}</span><span class="n num muted hide">${fmtMin(prev.taskMin)}</span><span class="n num hide">${cur.taskMin === prev.taskMin ? '<span class="same">—</span>' : `<span class="${cur.taskMin > prev.taskMin ? 'up' : 'down'}">${cur.taskMin > prev.taskMin ? '+' : '−'}${fmtMin(Math.abs(cur.taskMin - prev.taskMin))}</span>`}</span>
+        <span class="l2"><span class="num">${cur.tasksDone}/${cur.tasksTotal} việc xong · tuần trước ${fmtMin(prev.taskMin)}</span></span></div>
+    </section>
+    <div class="grid">
+      <section class="panel s8">
+        <div class="ph"><h2>Thời gian mỗi ngày</h2><span class="legend"><span><i style="background:var(--accent)"></i>Tuần này</span><span><i style="background:var(--prev)"></i>Tuần trước</span></span></div>
+        <div class="chart" data-chart="daily"></div>
+      </section>
+      <section class="panel s4">
+        <div class="ph"><h2>Lãi kép</h2></div>
+        <div class="kv"><span class="k">Đã cộng dồn${first ? ` từ ${fmtDM(parseYmd(first))}` : ''}</span><span class="v lead">${fmtMinHtml(total)}</span></div>
+        <div class="chart" data-chart="cum" style="min-height:150px;margin-top:12px"></div>
+      </section>
+    </div>
+    <section class="panel">
+      <div class="ph"><h2>Nhận xét</h2></div>
+      <ul class="insights">${insights.map(s => `<li>${s}</li>`).join('')}</ul>
+    </section>
+  </div>`;
+}
+
+// ---------- Biểu đồ (SVG, vẽ theo chiều rộng thật) ----------
+function niceScale(max) {
+  const steps = [5, 10, 15, 30, 60, 120, 180, 240, 300, 600, 900, 1200, 1800, 3000, 6000, 12000, 30000];
+  if (max <= 0) return { step: 30, n: 2 };
+  for (const s of steps) { const n = Math.floor(max / s) + 1; if (n <= 4) return { step: s, n }; }
+  const s = steps[steps.length - 1]; return { step: s, n: Math.floor(max / s) + 1 };
+}
+const roundTop = (x, y, w, h, r) => { r = Math.min(r, h, w / 2); return `M${x},${y + h}V${y + r}Q${x},${y} ${x + r},${y}H${x + w - r}Q${x + w},${y} ${x + w},${y + r}V${y + h}Z`; };
+function axes(W, H, L, R, T, B, max) {
+  const { step, n } = niceScale(max), top = step * n, ph = H - T - B;
+  const y = v => T + ph - v / top * ph; let s = '';
+  for (let i = 0; i <= n; i++) { const yy = y(i * step).toFixed(1); s += `<line x1="${L}" x2="${W - R}" y1="${yy}" y2="${yy}" class="${i ? 'g' : 'base'}"/><text x="${L - 8}" y="${+yy + 4}" text-anchor="end" class="tk">${fmtShort(i * step)}</text>`; }
+  return { y, s };
+}
+function drawDaily(el, { cur, prev }) {
+  const W = el.clientWidth, H = 190, L = 40, R = 2, T = 8, B = 26;
+  const { y, s: grid } = axes(W, H, L, R, T, B, Math.max(...cur, ...prev));
+  const bw = (W - L - R) / 7, barW = Math.max(4, Math.min(18, (bw - 12) / 2)), base = H - B; let s = grid;
+  DOW.forEach((lb, i) => {
+    const cx = L + bw * i + bw / 2;
+    [[prev[i], 'p', cx - barW - 1, 'Tuần trước'], [cur[i], 'c', cx + 1, 'Tuần này']].forEach(([v, c, x, nm]) => {
+      if (v > 0) { const yy = y(v); s += `<path class="${c}" d="${roundTop(x, yy, barW, base - yy, 3)}"><title>${lb} · ${nm}: ${fmtMin(v)}</title></path>`; }
+    });
+    s += `<text x="${cx}" y="${H - 6}" text-anchor="middle" class="tk">${lb}</text>`;
+  });
+  el.innerHTML = `<svg width="${W}" height="${H}" role="img" aria-label="Số phút mỗi ngày, tuần này so với tuần trước">${s}</svg>`;
+}
+function drawCum(el, weeks) {
+  const W = el.clientWidth, H = 150, L = 40, R = 6, T = 22, B = 26;
+  const vals = weeks.map(w => w.total);
+  const { y, s: grid } = axes(W, H, L, R, T, B, Math.max(...vals));
+  const step = (W - L - R - 16) / (vals.length - 1), xs = vals.map((_, i) => L + 8 + i * step);
+  const pts = vals.map((v, i) => `${xs[i].toFixed(1)},${y(v).toFixed(1)}`);
+  const base = H - B; let s = grid;
+  s += `<path class="ar" d="M${xs[0]},${base}L${pts.join('L')}L${xs[xs.length - 1]},${base}Z"/><polyline class="ln" points="${pts.join(' ')}"/>`;
+  const lx = xs[xs.length - 1], ly = y(vals[vals.length - 1]);
+  s += `<circle class="dot" cx="${lx}" cy="${ly}" r="3.5"/><text class="lab num" x="${lx}" y="${Math.max(12, ly - 9)}" text-anchor="end">${fmtMin(vals[vals.length - 1])}</text>`;
+  weeks.forEach((w, i) => { if (i % 2 === 1 || i === weeks.length - 1) s += `<text x="${xs[i]}" y="${H - 6}" text-anchor="middle" class="tk">${fmtDM(w.w)}</text>`; });
+  el.innerHTML = `<svg width="${W}" height="${H}" role="img" aria-label="Tổng thời gian cộng dồn qua 8 tuần">${s}</svg>`;
+}
+function drawCharts() {
+  document.querySelectorAll('[data-chart]').forEach(el => {
+    if (el.dataset.chart === 'daily' && CH.daily) drawDaily(el, CH.daily);
+    if (el.dataset.chart === 'cum' && CH.cum) drawCum(el, CH.cum);
+  });
+}
+let rzT; window.addEventListener('resize', () => { clearTimeout(rzT); rzT = setTimeout(drawCharts, 120); });
+
+// ---------- Màn hình: Cài đặt ----------
+function vSettings() {
+  return head('Cài đặt', 'Đồng bộ, thói quen, sao lưu và dữ liệu trên máy này.') + `
+  <section class="set">
+    <div class="lbl"><h2>Đồng bộ iPhone và Mac</h2><p>Dữ liệu được mã hóa trên máy rồi mới lưu vào một gist bí mật trong tài khoản GitHub của bạn. GitHub chỉ thấy chuỗi ký tự đã mã hóa.</p></div>
+    <div class="panel">${syncPanelHtml()}</div>
   </section>
-
-  <div class="grid2">
-    <section class="card">
-      <div class="card-head"><h2>Thời gian mỗi ngày</h2></div>
-      <div class="bars">${cur.dayMin.map((m, i) => `<div class="col" title="${DOW[i]}: ${fmtMin(m)} (tuần trước ${fmtMin(prev.dayMin[i])})">
-        <div class="pair"><div class="b prev" style="height:${prev.dayMin[i] / maxDay * 100}%"></div><div class="b" style="height:${m / maxDay * 100}%"></div></div>
-        <div class="lb">${DOW[i]}</div></div>`).join('')}</div>
-      <div class="legend"><span><i style="background:var(--accent)"></i>Tuần này</span><span><i style="background:var(--bar-prev)"></i>Tuần trước</span></div>
-    </section>
-    <section class="card">
-      <div class="card-head"><h2>Xu hướng 8 tuần</h2><span class="muted small">tổng thời gian</span></div>
-      <div class="bars">${trend.map((x, i) => `<div class="col" title="Tuần ${fmtDM(x.w)}: ${fmtMin(x.s.totalMin)}">
-        <div class="pair"><div class="b one ${i === trend.length - 1 ? '' : 'prev'}" style="height:${x.s.totalMin / maxTrend * 100}%"></div></div>
-        <div class="lb">${fmtDM(x.w)}</div></div>`).join('')}</div>
-    </section>
-  </div>
-
-  <section class="card" style="margin-top:14px">
-    <div class="card-head"><h2>Nhận xét</h2></div>
-    <ul class="insights">${insights.map(s => `<li>${s}</li>`).join('')}</ul>
+  <section class="set">
+    <div class="lbl"><h2>Thói quen hằng ngày</h2><p>Những mục hiện trong Daily check. Mục tiêu là số phút mỗi ngày, dùng để tính tiến độ tuần.</p></div>
+    <div class="panel">
+      <form data-f="saveHabits">
+        <div class="row small muted" style="margin-bottom:8px"><span class="grow">Tên</span><span style="width:96px">Phút mỗi ngày</span><span style="width:34px"></span></div>
+        <div id="habitRows">${S.habits.map((h, i) => habitRow(h, i)).join('')}</div>
+        <div class="row" style="margin-top:12px"><button type="button" class="btn" data-a="addHabitRow">${ic('plus', 16)}Thêm thói quen</button><span class="grow"></span><button class="btn primary">Lưu</button></div>
+      </form>
+    </div>
+  </section>
+  <section class="set">
+    <div class="lbl"><h2>Sao lưu</h2><p>Một file chứa toàn bộ dữ liệu. Két mật khẩu vẫn được mã hóa bên trong file.</p></div>
+    <div class="panel row wrap">
+      <button class="btn" data-a="exportData">${ic('download', 16)}Xuất bản sao lưu</button>
+      <button class="btn" data-a="importData">${ic('upload', 16)}Nhập từ bản sao lưu</button>
+    </div>
+  </section>
+  <section class="set">
+    <div class="lbl"><h2>Thông báo và lưu trữ</h2><p>Thông báo chỉ hiện khi app đang mở. Để được báo cả khi đóng app, dùng nút lịch ở mỗi nhắc nhở.</p></div>
+    <div class="panel row wrap">
+      ${'Notification' in window && Notification.permission === 'default' ? `<button class="btn" data-a="askNotify">${ic('bell', 16)}Bật thông báo</button>` : `<span class="muted">Thông báo: ${'Notification' in window ? (Notification.permission === 'granted' ? 'đã bật' : 'đã bị chặn trong cài đặt trình duyệt') : 'trình duyệt không hỗ trợ'}</span>`}
+      <button class="btn" data-a="persist">Yêu cầu giữ dữ liệu lâu dài</button>
+    </div>
+  </section>
+  <section class="set">
+    <div class="lbl"><h2>Xóa dữ liệu trên máy này</h2><p>Xóa mọi ghi chú, việc, sách, nhắc nhở và két trên máy này, đồng thời ngắt đồng bộ. Bản trên GitHub được giữ nguyên.</p></div>
+    <div class="panel"><button class="btn danger" data-a="wipe">${ic('trash', 16)}Xóa dữ liệu trên máy này</button></div>
   </section>`;
+}
+function habitRow(h, i) {
+  return `<div class="row" data-hrow style="margin-bottom:8px">
+    <input type="text" name="name_${i}" value="${esc(h.name)}" required aria-label="Tên thói quen" class="grow">
+    <input type="number" name="target_${i}" value="${h.target || 0}" min="0" step="5" style="width:96px;flex:none" aria-label="Phút mỗi ngày">
+    <input type="hidden" name="id_${i}" value="${h.id}">
+    <button type="button" class="ib" data-a="rmHabitRow" aria-label="Bỏ thói quen này" title="Bỏ">${ic('x', 16)}</button></div>`;
+}
+
+// ---------- Đồng bộ qua GitHub Gist ----------
+const SYNC_KEY = 'sc.sync';
+const GIST_FILE = 'small-compounding.sync.json';
+const SYNC_ITER = 310000;
+let SY = JSON.parse(lsGet(SYNC_KEY) || 'null');  // { token, pass, gistId, last, err }
+let syncState = 'idle';                         // idle | busy | ok | error
+let unloading = false; window.addEventListener('pagehide', () => unloading = true);
+let syncing = false, syncAgain = false, syncTimer = null, syncKeyCache = null;
+const syncOn = () => !!(SY && SY.token && SY.pass);
+function syncStore() { lsSet(SYNC_KEY, JSON.stringify(SY)); }
+function syncLabel() {
+  if (!syncOn()) return 'Chưa bật đồng bộ';
+  if (syncState === 'busy') return 'Đang đồng bộ…';
+  if (syncState === 'error') return 'Lỗi đồng bộ: ' + (SY.err || '');
+  return SY.last ? `Đã đồng bộ ${fmtClock(SY.last)}` : 'Chưa đồng bộ lần nào';
+}
+const syncIconClass = () => !syncOn() ? '' : syncState === 'error' ? 'warn' : 'on';
+function syncRowHtml() {
+  return `<button data-a="syncTap" title="${esc(syncLabel())}">${ic(syncState === 'error' ? 'cloud-off' : 'cloud')}<span class="${syncState === 'error' ? 'down' : ''}" style="font-size:13px">${esc(syncOn() ? syncLabel().replace(/^Lỗi đồng bộ:.*/, 'Lỗi đồng bộ') : 'Bật đồng bộ')}</span></button>`;
+}
+function syncPanelHtml() {
+  if (syncOn()) return `
+    <div class="status ${syncState === 'error' ? 'err' : syncState === 'busy' ? 'busy' : ''}"><span class="dot"></span><span class="grow">${esc(syncLabel())}</span></div>
+    <p class="muted" style="line-height:21px;margin-bottom:14px">Tự đồng bộ khi mở app, khi quay lại app và vài giây sau mỗi thay đổi. Trên máy còn lại, nhập cùng token và cùng mật khẩu đồng bộ.</p>
+    <div class="row wrap"><button class="btn primary" data-a="syncNow">${ic('refresh', 16)}Đồng bộ ngay</button><button class="btn" data-a="syncOff">Ngắt đồng bộ trên máy này</button></div>`;
+  return `
+    <ol class="steps">
+      <li>Mở trang tạo token: <a href="https://github.com/settings/tokens/new?scopes=gist&description=Small%20Compounding" target="_blank" rel="noopener">github.com/settings/tokens/new</a>. Ô <b>gist</b> đã được tích sẵn.</li>
+      <li>Ở Expiration chọn <b>No expiration</b>, bấm <b>Generate token</b> rồi sao chép token bắt đầu bằng <span class="num">ghp_</span>.</li>
+      <li>Dán token vào ô dưới và đặt một mật khẩu đồng bộ. Làm y hệt trên máy còn lại.</li>
+    </ol>
+    <form data-f="syncSetup">
+      <label class="f">Token GitHub<input type="password" name="token" required autocomplete="off" spellcheck="false" placeholder="ghp_…"></label>
+      <label class="f">Mật khẩu đồng bộ<input type="password" name="pass" minlength="8" required autocomplete="new-password" aria-describedby="sph"><span class="help" id="sph">Ít nhất 8 ký tự. Dùng cùng một mật khẩu trên iPhone và Mac.</span></label>
+      <button class="btn primary">${ic('cloud', 16)}Kết nối và đồng bộ</button>
+    </form>`;
+}
+function setSync(st) {
+  syncState = st;
+  renderShell();
+  if (tab === 'settings') { const p = document.querySelector('.set .panel'); if (p) p.innerHTML = syncPanelHtml(); }
+}
+function scheduleSync(ms = 3000) { if (!syncOn()) return; clearTimeout(syncTimer); syncTimer = setTimeout(() => syncNow(false), ms); }
+async function gh(path, opt = {}) {
+  const r = await fetch('https://api.github.com' + path, {
+    ...opt, cache: 'no-store',
+    headers: { Authorization: 'Bearer ' + SY.token, Accept: 'application/vnd.github+json', 'X-GitHub-Api-Version': '2022-11-28', ...(opt.body ? { 'Content-Type': 'application/json' } : {}) }
+  });
+  if (!r.ok) { const e = new Error('HTTP ' + r.status); e.status = r.status; throw e; }
+  return r.status === 204 ? null : r.json();
+}
+async function findGist() {
+  for (let p = 1; p <= 5; p++) {
+    const list = await gh(`/gists?per_page=100&page=${p}`);
+    const g = list.find(g => g.files && g.files[GIST_FILE]);
+    if (g) return g.id;
+    if (list.length < 100) break;
+  }
+  return null;
+}
+async function syncKey(saltB64) {
+  if (syncKeyCache && syncKeyCache.salt === saltB64 && syncKeyCache.pass === SY.pass) return syncKeyCache.key;
+  const key = await deriveKey(SY.pass, unb64(saltB64), SYNC_ITER);
+  syncKeyCache = { salt: saltB64, pass: SY.pass, key };
+  return key;
+}
+// Dạng chuẩn để so sánh hai trạng thái: mảng sắp theo id.
+function canon(s) {
+  const c = { ...s }; COLLS.forEach(k => c[k] = [...(s[k] || [])].sort((a, b) => a.id < b.id ? -1 : a.id > b.id ? 1 : 0));
+  return JSON.stringify(c, Object.keys(c).sort());
+}
+const ts = o => o.u || o.created || o.added || 0;
+function mergeState(a, b) {
+  const out = normalize({ ...a });
+  const del = { ...(b.del || {}) };
+  for (const [k, v] of Object.entries(a.del || {})) del[k] = Math.max(del[k] || 0, v);
+  const cutoff = now() - 120 * 864e5; for (const k in del) if (del[k] < cutoff) delete del[k];
+  out.del = del;
+  for (const c of COLLS) {
+    const m = new Map();
+    for (const x of [...(a[c] || []), ...(b[c] || [])]) { const y = m.get(x.id); if (!y || ts(x) > ts(y)) m.set(x.id, x); }
+    out[c] = [...m.values()].filter(x => !(del[x.id] >= ts(x)));
+  }
+  const logs = {};
+  for (const d of new Set([...Object.keys(a.logs || {}), ...Object.keys(b.logs || {})])) {
+    const la = a.logs?.[d] || {}, lb = b.logs?.[d] || {}; logs[d] = {};
+    for (const h of new Set([...Object.keys(la), ...Object.keys(lb)])) { const x = la[h], y = lb[h]; logs[d][h] = !x ? y : !y ? x : ((y.u || 0) > (x.u || 0) ? y : x); }
+  }
+  out.logs = logs;
+  if ((b.habitsU || 0) > (a.habitsU || 0)) { out.habits = b.habits; out.habitsU = b.habitsU; }
+  if ((b.vault?.u || 0) > (a.vault?.u || 0)) out.vault = b.vault;
+  return out;
+}
+function syncErrorText(e) {
+  if (e.name === 'OperationError') return 'Mật khẩu đồng bộ không khớp với dữ liệu đã lưu trên GitHub';
+  if (e.status === 401) return 'Token GitHub không hợp lệ hoặc đã hết hạn';
+  if (e.status === 403 || e.status === 404) return 'Token chưa có quyền gist';
+  if (!navigator.onLine || e instanceof TypeError) return 'Không có mạng, sẽ thử lại sau';
+  return e.message || 'Lỗi không rõ';
+}
+async function syncNow(manual) {
+  if (!syncOn()) return;
+  if (syncing) { syncAgain = true; return; }
+  syncing = true; setSync('busy');
+  try {
+    if (!SY.gistId) { SY.gistId = await findGist(); syncStore(); }
+    let remote = null, salt = null;
+    if (SY.gistId) {
+      let g = null;
+      try { g = await gh('/gists/' + SY.gistId); } catch (e) { if (e.status === 404) { SY.gistId = null; syncStore(); } else throw e; }
+      const f = g?.files?.[GIST_FILE];
+      if (f) {
+        const txt = f.truncated ? await (await fetch(f.raw_url, { cache: 'no-store' })).text() : f.content;
+        const p = JSON.parse(txt); salt = p.salt;
+        remote = normalize(JSON.parse(await aesOpen(await syncKey(p.salt), p.iv, p.ct)));
+      }
+    }
+    const before = canon(S);
+    const merged = remote ? mergeState(S, remote) : S;
+    const after = canon(merged);
+    if (after !== before) {
+      const vaultChanged = JSON.stringify(merged.vault) !== JSON.stringify(S.vault);
+      S = merged; saveLocal();
+      if (vaultChanged) lockVault();
+      render();
+    }
+    if (!remote || canon(remote) !== after) {
+      salt = salt || b64(crypto.getRandomValues(new Uint8Array(16)));
+      const sealed = await aesSeal(await syncKey(salt), JSON.stringify(S));
+      const content = JSON.stringify({ app: 'small-compounding', v: 1, salt, iter: SYNC_ITER, ...sealed, at: now() });
+      if (SY.gistId) await gh('/gists/' + SY.gistId, { method: 'PATCH', body: JSON.stringify({ files: { [GIST_FILE]: { content } } }) });
+      else { const g = await gh('/gists', { method: 'POST', body: JSON.stringify({ description: 'Small Compounding: dữ liệu đồng bộ (đã mã hóa)', public: false, files: { [GIST_FILE]: { content } } }) }); SY.gistId = g.id; }
+    }
+    SY.last = now(); SY.err = null; syncStore(); setSync('ok');
+    if (manual) toast('Đã đồng bộ');
+  } catch (e) {
+    if (unloading) return;
+    SY.err = syncErrorText(e); syncStore(); setSync('error');
+    if (manual) toast(SY.err);
+  } finally {
+    syncing = false;
+    if (syncAgain) { syncAgain = false; scheduleSync(500); }
+  }
 }
 
 // ---------- Hộp thoại ----------
 function openDlg(html) { const d = $('#dlg'); d.innerHTML = html; d.showModal(); }
-function closeDlg() { $('#dlg').close(); }
-
-function settingsHtml() {
-  return `<h2>Cài đặt & sao lưu</h2>
-  <div class="stack">
-    <p class="muted small" style="margin:0">Dữ liệu chỉ nằm trên thiết bị này. Hãy <b>xuất bản sao lưu</b> thường xuyên, và dùng file đó để chuyển dữ liệu giữa iPhone và Mac. Két mật khẩu vẫn được mã hóa bên trong file sao lưu.</p>
-    <button class="btn" data-a="exportData">⬇️ Xuất bản sao lưu (.json)</button>
-    <button class="btn plain" data-a="importData">⬆️ Nhập từ bản sao lưu</button>
-    <button class="btn plain" data-a="editHabits">✏️ Sửa danh sách thói quen</button>
-    <button class="btn plain" data-a="persist">💾 Yêu cầu trình duyệt giữ dữ liệu lâu dài</button>
-    <div class="row"><button class="btn danger sm" data-a="wipe">Xóa toàn bộ dữ liệu</button><span class="grow"></span><button class="btn ghost" data-a="closeDlg">Đóng</button></div>
-  </div>`;
-}
-function habitsDlgHtml() {
-  return `<h2>Thói quen hằng ngày</h2>
-  <form data-f="saveHabits" class="stack">
-    ${S.habits.map((h, i) => `<div class="row" data-hrow>
-      <input type="text" name="icon_${i}" value="${esc(h.icon)}" style="width:52px;flex:none;text-align:center" aria-label="Biểu tượng">
-      <input type="text" name="name_${i}" value="${esc(h.name)}" required aria-label="Tên">
-      <input type="number" name="target_${i}" value="${h.target}" min="0" step="5" style="width:80px;flex:none" aria-label="Mục tiêu phút/ngày" title="Mục tiêu phút mỗi ngày">
-      <input type="hidden" name="id_${i}" value="${h.id}">
-      <button type="button" class="icon" data-a="rmHabitRow" title="Xóa">✕</button></div>`).join('')}
-    <div class="row" data-hrow>
-      <input type="text" name="icon_new" placeholder="🧘" style="width:52px;flex:none;text-align:center">
-      <input type="text" name="name_new" placeholder="Thói quen mới (vd: Thiền)">
-      <input type="number" name="target_new" placeholder="phút" min="0" step="5" style="width:80px;flex:none">
-      <span style="width:30px"></span></div>
-    <p class="muted small" style="margin:0">Số bên phải là mục tiêu phút mỗi ngày (dùng để tính % tuần).</p>
-    <div class="row"><span class="grow"></span><button type="button" class="btn ghost" data-a="closeDlg">Hủy</button><button class="btn">Lưu</button></div>
-  </form>`;
-}
+function closeDlg() { if ($('#dlg').open) $('#dlg').close(); }
+const dlgActs = (ok = 'Lưu', extra = '') => `<div class="row" style="margin-top:6px">${extra}<span class="grow"></span><button type="button" class="btn text" data-a="closeDlg">Hủy</button><button class="btn primary">${ok}</button></div>`;
 function vaultItemDlg(it) {
   it = it || { id: '', site: '', user: '', pass: '', note: '' };
   return `<h2>${it.id ? 'Sửa' : 'Thêm'} mật khẩu</h2>
-  <form data-f="vaultSave" class="stack">
+  <form data-f="vaultSave">
     <input type="hidden" name="id" value="${it.id}">
-    <label class="f">Tên / trang web<input type="text" name="site" value="${esc(it.site)}" required autocomplete="off"></label>
-    <label class="f">Tài khoản / email<input type="text" name="user" value="${esc(it.user)}" autocomplete="off"></label>
-    <label class="f">Mật khẩu<div class="row" style="margin-top:3px"><input type="text" name="pass" id="passIn" value="${esc(it.pass)}" required autocomplete="off" class="pw">
-      <button type="button" class="btn plain sm" data-a="genPass">🎲 Tạo</button></div></label>
-    <label class="f">Ghi chú<textarea name="note" style="min-height:60px">${esc(it.note)}</textarea></label>
-    <div class="row">${it.id ? `<button type="button" class="btn danger sm" data-a="vaultDel" data-id="${it.id}">Xóa</button>` : ''}<span class="grow"></span>
-      <button type="button" class="btn ghost" data-a="closeDlg">Hủy</button><button class="btn">Lưu</button></div>
+    <label class="f">Tên hoặc trang web<input type="text" name="site" value="${esc(it.site)}" required autocomplete="off"></label>
+    <label class="f">Tài khoản hoặc email<input type="text" name="user" value="${esc(it.user)}" autocomplete="off"></label>
+    <label class="f">Mật khẩu<div class="row"><input type="text" name="pass" id="passIn" value="${esc(it.pass)}" required autocomplete="off" class="pw" spellcheck="false">
+      <button type="button" class="btn" data-a="genPass">${ic('wand', 16)}Tạo</button></div></label>
+    <label class="f">Ghi chú<textarea name="note" style="min-height:64px">${esc(it.note)}</textarea></label>
+    ${dlgActs('Lưu', it.id ? `<button type="button" class="btn danger" data-a="vaultDel" data-id="${it.id}">Xóa</button>` : '')}
   </form>`;
 }
 
@@ -727,20 +1093,17 @@ function vaultItemDlg(it) {
 const findTask = id => S.tasks.find(x => x.id === id);
 const A = {
   tab(id) { tab = id; lsSet('sc.tab', id); render(); window.scrollTo(0, 0); },
+  focusNote() { const el = $('#quickNote'); if (el) { el.scrollIntoView({ block: 'center' }); el.focus(); } },
   toggleHabit(id) {
-    const t = todayStr(); S.logs[t] = S.logs[t] || {};
-    const e = S.logs[t][id] = S.logs[t][id] || {}; e.done = !e.done;
+    const e = logEntry(todayStr(), id); e.done = !e.done;
     if (e.done && !e.min) { const h = S.habits.find(h => h.id === id); if (h?.target) e.min = h.target; }
-    save(); render();
+    touch(e); save(); render();
   },
-  addMin(id) {
-    const t = todayStr(); S.logs[t] = S.logs[t] || {};
-    const e = S.logs[t][id] = S.logs[t][id] || {}; e.min = (+e.min || 0) + 15; e.done = true; save(); render();
-  },
-  toggleTask(id) { const x = findTask(id); x.done = !x.done; x.doneAt = x.done ? Date.now() : null; save(); render(); },
-  moveTask(id) { const x = findTask(id); x.date = ymd(addDays(parseYmd(x.date), 1)); save(); render(); toast(`Đã dời sang ${fmtDay(x.date)}`); },
-  delTask(id) { S.tasks = S.tasks.filter(x => x.id !== id); save(); render(); },
-  rollover() { const t = todayStr(); let n = 0; S.tasks.forEach(x => { if (x.date < t && !x.done) { x.date = t; n++; } }); save(); render(); toast(`Đã dời ${n} việc sang hôm nay`); },
+  addMin(id) { const e = logEntry(todayStr(), id); e.min = (+e.min || 0) + 15; e.done = true; touch(e); save(); render(); },
+  toggleTask(id) { const x = findTask(id); x.done = !x.done; x.doneAt = x.done ? now() : null; touch(x); save(); render(); },
+  moveTask(id) { const x = findTask(id); x.date = ymd(addDays(parseYmd(x.date), 1)); touch(x); save(); render(); toast(`Đã dời sang ${fmtDay(x.date)}`); },
+  delTask(id) { remove('tasks', id); save(); render(); },
+  rollover() { const t = todayStr(); let n = 0; S.tasks.forEach(x => { if (x.date < t && !x.done) { x.date = t; touch(x); n++; } }); save(); render(); toast(`Đã dời ${n} việc sang hôm nay`); },
   planNav(id) { planOff = id === '0' ? 0 : planOff + Number(id); render(); },
   weekNav(id) { weekOff = id === '0' ? 0 : Math.min(0, weekOff + Number(id)); render(); },
 
@@ -748,30 +1111,28 @@ const A = {
   doneReminder(id) {
     const r = S.reminders.find(x => x.id === id);
     if (r.repeat === 'none') r.done = true;
-    else { let d = new Date(r.at); const step = r.repeat === 'daily' ? 1 : 7; do d = addDays(d, step); while (d.getTime() <= Date.now()); r.at = localDT(d); r.notified = false; }
-    save(); render();
+    else { let d = new Date(r.at); const step = r.repeat === 'daily' ? 1 : 7; do d = addDays(d, step); while (d.getTime() <= now()); r.at = localDT(d); r.notified = false; }
+    touch(r); save(); render();
   },
-  delReminder(id) { S.reminders = S.reminders.filter(x => x.id !== id); save(); render(); },
+  delReminder(id) { remove('reminders', id); save(); render(); },
   icsReminder(id) { const r = S.reminders.find(x => x.id === id); download(`nhac-nho-${r.title.slice(0, 20).replace(/[^\p{L}\p{N}]+/gu, '-')}.ics`, icsFor(r), 'text/calendar'); },
 
   tagFilter(t) { noteQuery = noteQuery.toLowerCase() === t ? '' : t; render(); },
-  pinNote(id) { const n = S.notes.find(x => x.id === id); n.pinned = !n.pinned; save(); render(); },
+  pinNote(id) { const n = S.notes.find(x => x.id === id); n.pinned = !n.pinned; touch(n); save(); render(); },
   copyNote(id) { copyText(S.notes.find(x => x.id === id).text, 'ghi chú'); },
   editNote(id) {
     const n = S.notes.find(x => x.id === id);
-    openDlg(`<h2>Sửa ghi chú</h2><form data-f="saveNote" class="stack"><input type="hidden" name="id" value="${id}">
-      <textarea name="text" style="min-height:180px" required>${esc(n.text)}</textarea>
-      <div class="row"><span class="grow"></span><button type="button" class="btn ghost" data-a="closeDlg">Hủy</button><button class="btn">Lưu</button></div></form>`);
+    openDlg(`<h2>Sửa ghi chú</h2><form data-f="saveNote"><input type="hidden" name="id" value="${id}">
+      <textarea name="text" style="min-height:200px;margin-bottom:12px" required aria-label="Nội dung">${esc(n.text)}</textarea>${dlgActs()}</form>`);
   },
-  delNote(id) { if (confirm('Xóa ghi chú này?')) { S.notes = S.notes.filter(x => x.id !== id); save(); render(); } },
+  delNote(id) { if (confirm('Xóa ghi chú này?')) { remove('notes', id); save(); render(); } },
 
   readFilter(id) { readFilter = id; render(); },
-  delReading(id) { if (confirm('Xóa khỏi danh sách?')) { S.readings = S.readings.filter(x => x.id !== id); save(); render(); } },
+  delReading(id) { if (confirm('Xóa khỏi danh sách?')) { remove('readings', id); save(); render(); } },
   noteReading(id) {
     const r = S.readings.find(x => x.id === id);
-    openDlg(`<h2>${esc(r.title)}</h2><form data-f="saveReadingNote" class="stack"><input type="hidden" name="id" value="${id}">
-      <textarea name="note" placeholder="Ý chính, cảm nhận, trích dẫn hay…">${esc(r.note || '')}</textarea>
-      <div class="row"><span class="grow"></span><button type="button" class="btn ghost" data-a="closeDlg">Hủy</button><button class="btn">Lưu</button></div></form>`);
+    openDlg(`<h2>${esc(r.title)}</h2><form data-f="saveReadingNote"><input type="hidden" name="id" value="${id}">
+      <label class="f">Cảm nhận, ý chính, trích dẫn<textarea name="note">${esc(r.note || '')}</textarea></label>${dlgActs()}</form>`);
   },
 
   vaultLock() { lockVault(); render(); },
@@ -782,87 +1143,85 @@ const A = {
   genPass() { $('#passIn').value = genPassword(); },
   async vaultDel(id) { if (!confirm('Xóa mật khẩu này?')) return; V.items = V.items.filter(x => x.id !== id); await sealVault(); closeDlg(); render(); },
   vaultChangePw() {
-    openDlg(`<h2>Đổi mật khẩu chính</h2><form data-f="vaultNewPw" class="stack">
-      <input type="password" name="pw" placeholder="Mật khẩu chính mới" minlength="8" required autocomplete="new-password">
-      <input type="password" name="pw2" placeholder="Nhập lại" minlength="8" required autocomplete="new-password">
-      <div class="row"><span class="grow"></span><button type="button" class="btn ghost" data-a="closeDlg">Hủy</button><button class="btn">Đổi</button></div></form>`);
+    openDlg(`<h2>Đổi mật khẩu chính</h2><form data-f="vaultNewPw">
+      <label class="f">Mật khẩu chính mới<input type="password" name="pw" minlength="8" required autocomplete="new-password"></label>
+      <label class="f">Nhập lại<input type="password" name="pw2" minlength="8" required autocomplete="new-password"></label>${dlgActs('Đổi')}</form>`);
   },
 
-  openSettings() { openDlg(settingsHtml()); },
-  editHabits() { openDlg(habitsDlgHtml()); },
+  addHabitRow() { const box = $('#habitRows'); box.insertAdjacentHTML('beforeend', habitRow({ id: '', name: '', target: 15 }, 'n' + box.children.length)); box.lastElementChild.querySelector('input').focus(); },
   rmHabitRow(_, b) { b.closest('[data-hrow]').remove(); },
   closeDlg,
   exportData() { download(`small-compounding-${todayStr()}.json`, JSON.stringify(S, null, 1), 'application/json'); toast('Đã xuất bản sao lưu'); },
   importData() { $('#importFile').click(); },
   async persist() {
-    if (navigator.storage?.persist) { const ok = await navigator.storage.persist(); toast(ok ? 'Trình duyệt sẽ giữ dữ liệu lâu dài ✓' : 'Trình duyệt chưa cho phép — hãy cài app ra màn hình chính'); }
+    if (navigator.storage?.persist) { const ok = await navigator.storage.persist(); toast(ok ? 'Trình duyệt sẽ giữ dữ liệu lâu dài' : 'Trình duyệt chưa cho phép. Hãy cài app ra màn hình chính.'); }
     else toast('Trình duyệt không hỗ trợ tính năng này');
   },
-  wipe() { if (confirm('Xóa TOÀN BỘ dữ liệu trên thiết bị này? Không thể hoàn tác.') && confirm('Chắc chắn chứ? Hãy xuất bản sao lưu trước nếu cần.')) { S = defaultState(); lockVault(); save(); closeDlg(); render(); } }
+  wipe() {
+    if (confirm('Xóa toàn bộ dữ liệu trên máy này? Không thể hoàn tác.') && confirm('Chắc chắn chứ? Hãy xuất bản sao lưu trước nếu cần.')) {
+      S = defaultState(); lockVault(); saveLocal(); SY = null; lsSet(SYNC_KEY, 'null'); syncState = 'idle'; render(); toast('Đã xóa dữ liệu trên máy này');
+    }
+  },
+  syncTap() { if (syncOn()) syncNow(true); else A.tab('settings'); },
+  syncNow() { syncNow(true); },
+  syncOff() { if (confirm('Ngắt đồng bộ trên máy này? Dữ liệu trên máy và trên GitHub vẫn giữ nguyên.')) { SY = null; lsSet(SYNC_KEY, 'null'); syncState = 'idle'; render(); } }
 };
 
 // ---------- Thay đổi ô nhập ----------
 const C = {
-  habitMin(id, el) {
-    const t = todayStr(); S.logs[t] = S.logs[t] || {};
-    const e = S.logs[t][id] = S.logs[t][id] || {}; e.min = Math.max(0, +el.value || 0); if (e.min > 0) e.done = true; save(); render();
-  },
-  taskMin(id, el) { findTask(id).min = Math.max(0, +el.value || 0); save(); },
-  readStatus(id, el) {
-    const r = S.readings.find(x => x.id === id); r.status = el.value;
-    r.finished = r.status === 'done' ? (r.finished || todayStr()) : null; save(); render();
-  }
+  habitMin(id, el) { const e = logEntry(todayStr(), id); e.min = Math.max(0, +el.value || 0); if (e.min > 0) e.done = true; touch(e); save(); render(); },
+  taskMin(id, el) { const x = findTask(id); x.min = Math.max(0, +el.value || 0); touch(x); save(); },
+  readStatus(id, el) { const r = S.readings.find(x => x.id === id); r.status = el.value; r.finished = r.status === 'done' ? (r.finished || todayStr()) : null; touch(r); save(); render(); }
 };
 
 // ---------- Gửi form ----------
 const F = {
-  addTask(fd) { S.tasks.push({ id: uid(), title: fd.get('title').trim(), date: fd.get('date'), done: false, min: 0, created: Date.now() }); save(); render(); focusSame('addTask', fd.get('date')); },
-  addNote(fd) { const text = fd.get('text').trim(); if (!text) return; S.notes.push({ id: uid(), text, created: Date.now(), pinned: false }); save(); render(); toast('Đã lưu ghi chú ✓'); },
-  saveNote(fd) { S.notes.find(x => x.id === fd.get('id')).text = fd.get('text').trim(); save(); closeDlg(); render(); },
-  addReminder(fd) { S.reminders.push({ id: uid(), title: fd.get('title').trim(), at: fd.get('at'), repeat: fd.get('repeat'), done: false, notified: false }); save(); render(); toast('Đã thêm nhắc nhở'); },
+  addTask(fd) { S.tasks.push(touch({ id: uid(), title: fd.get('title').trim(), date: fd.get('date'), done: false, min: 0, created: now() })); save(); render(); focusTaskInput(fd.get('date')); },
+  addNote(fd) { const text = fd.get('text').trim(); if (!text) return; S.notes.push(touch({ id: uid(), text, created: now(), pinned: false })); save(); render(); toast('Đã lưu ghi chú'); },
+  saveNote(fd) { const n = S.notes.find(x => x.id === fd.get('id')); n.text = fd.get('text').trim(); touch(n); save(); closeDlg(); render(); },
+  addReminder(fd) { S.reminders.push(touch({ id: uid(), title: fd.get('title').trim(), at: fd.get('at'), repeat: fd.get('repeat'), done: false, notified: false })); save(); render(); toast('Đã thêm nhắc nhở'); },
   addReading(fd) {
     const status = fd.get('status');
-    S.readings.push({ id: uid(), title: fd.get('title').trim(), author: fd.get('author').trim(), link: fd.get('link').trim(), status, note: '', added: Date.now(), finished: status === 'done' ? todayStr() : null });
+    S.readings.push(touch({ id: uid(), title: fd.get('title').trim(), author: fd.get('author').trim(), link: fd.get('link').trim(), status, note: '', added: now(), finished: status === 'done' ? todayStr() : null }));
     readFilter = status; save(); render();
   },
-  saveReadingNote(fd) { S.readings.find(x => x.id === fd.get('id')).note = fd.get('note').trim(); save(); closeDlg(); render(); },
-  saveHabits(fd, form) {
+  saveReadingNote(fd) { const r = S.readings.find(x => x.id === fd.get('id')); r.note = fd.get('note').trim(); touch(r); save(); closeDlg(); render(); },
+  saveHabits(fd) {
     const list = [];
     for (const [k, v] of fd.entries()) {
-      const m = k.match(/^id_(\d+)$/); if (!m) continue;
-      const i = m[1]; list.push({ id: v, name: fd.get('name_' + i).trim(), icon: fd.get('icon_' + i).trim() || '•', target: Math.max(0, +fd.get('target_' + i) || 0) });
+      const m = k.match(/^id_(.+)$/); if (!m) continue;
+      const i = m[1], name = (fd.get('name_' + i) || '').trim(); if (!name) continue;
+      list.push({ id: v || uid(), name, target: Math.max(0, +fd.get('target_' + i) || 0) });
     }
-    const nn = (fd.get('name_new') || '').trim();
-    if (nn) list.push({ id: uid(), name: nn, icon: (fd.get('icon_new') || '').trim() || '•', target: Math.max(0, +fd.get('target_new') || 0) });
-    S.habits = list; save(); closeDlg(); render(); toast('Đã lưu thói quen');
+    S.habits = list; S.habitsU = now(); save(); render(); toast('Đã lưu thói quen');
   },
-  async vaultCreate(fd) {
-    if (fd.get('pw') !== fd.get('pw2')) return toast('Hai mật khẩu không khớp');
-    await createVault(fd.get('pw')); render(); toast('Đã tạo két 🔐');
-  },
+  async vaultCreate(fd) { if (fd.get('pw') !== fd.get('pw2')) return toast('Hai mật khẩu không khớp'); await createVault(fd.get('pw')); render(); toast('Đã tạo két'); },
   async vaultUnlock(fd, form) {
     const btn = form.querySelector('button'); btn.disabled = true; btn.textContent = 'Đang mở…';
-    try { await openVault(fd.get('pw')); lastActive = Date.now(); render(); }
+    try { await openVault(fd.get('pw')); lastActive = now(); render(); }
     catch (e) { btn.disabled = false; btn.textContent = 'Mở khóa'; toast('Sai mật khẩu chính'); }
   },
   async vaultSave(fd) {
-    const it = { id: fd.get('id') || uid(), site: fd.get('site').trim(), user: fd.get('user').trim(), pass: fd.get('pass'), note: fd.get('note').trim(), updated: Date.now() };
+    const it = { id: fd.get('id') || uid(), site: fd.get('site').trim(), user: fd.get('user').trim(), pass: fd.get('pass'), note: fd.get('note').trim(), updated: now() };
     const i = V.items.findIndex(x => x.id === it.id); if (i >= 0) V.items[i] = it; else V.items.push(it);
-    await sealVault(); closeDlg(); render(); toast('Đã lưu (mã hóa) ✓');
+    await sealVault(); closeDlg(); render(); toast('Đã lưu và mã hóa');
   },
-  async vaultNewPw(fd) {
-    if (fd.get('pw') !== fd.get('pw2')) return toast('Hai mật khẩu không khớp');
-    await createVault(fd.get('pw'), V.items); closeDlg(); render(); toast('Đã đổi mật khẩu chính');
+  async vaultNewPw(fd) { if (fd.get('pw') !== fd.get('pw2')) return toast('Hai mật khẩu không khớp'); await createVault(fd.get('pw'), V.items); closeDlg(); render(); toast('Đã đổi mật khẩu chính'); },
+  async syncSetup(fd, form) {
+    SY = { token: fd.get('token').trim(), pass: fd.get('pass') }; syncStore();
+    form.querySelector('button').disabled = true;
+    await syncNow(true);
+    if (tab === 'settings') render();
   }
 };
-function focusSame(form, date) {
-  const el = document.querySelector(`form[data-f="${form}"] input[name="date"][value="${date}"]`);
+function focusTaskInput(date) {
+  const el = document.querySelector(`form[data-f="addTask"] input[name="date"][value="${date}"]`);
   el?.parentElement.querySelector('input[name="title"]')?.focus();
 }
 
 // ---------- Kết nối sự kiện ----------
 document.addEventListener('click', e => {
-  const b = e.target.closest('[data-a]'); if (!b || !A[b.dataset.a]) return;
+  const b = e.target.closest('[data-a]'); if (!b || !A[b.dataset.a] || b.disabled) return;
   e.preventDefault(); A[b.dataset.a](b.dataset.id, b);
 });
 document.addEventListener('change', e => { const el = e.target.closest('[data-c]'); if (el && C[el.dataset.c]) C[el.dataset.c](el.dataset.id, el); });
@@ -872,10 +1231,10 @@ document.addEventListener('input', e => {
   if (e.target.id === 'vaultQ') { vaultQuery = e.target.value; $('#vaultList').innerHTML = vaultListHtml(); }
 });
 document.addEventListener('keydown', e => {
-  lastActive = Date.now();
+  lastActive = now();
   if (e.key === 'Enter' && (e.metaKey || e.ctrlKey) && e.target.tagName === 'TEXTAREA') e.target.form?.requestSubmit();
 });
-document.addEventListener('pointerdown', () => lastActive = Date.now());
+document.addEventListener('pointerdown', () => lastActive = now());
 $('#dlg').addEventListener('click', e => { if (e.target === e.currentTarget) closeDlg(); });
 $('#importFile').addEventListener('change', async e => {
   const file = e.target.files[0]; e.target.value = ''; if (!file) return;
@@ -883,30 +1242,33 @@ $('#importFile').addEventListener('change', async e => {
     const data = JSON.parse(await file.text());
     if (!data || !Array.isArray(data.habits) || typeof data.logs !== 'object') throw new Error('bad');
     if (!confirm('Thay toàn bộ dữ liệu hiện tại bằng bản sao lưu này?')) return;
-    S = Object.assign(defaultState(), data); lockVault(); save(); closeDlg(); render(); toast('Đã nhập dữ liệu ✓');
+    S = normalize(data); lockVault(); save(); render(); toast('Đã nhập dữ liệu');
   } catch (err) { toast('File sao lưu không hợp lệ'); }
 });
-// Tự khóa két: rời app hoặc 3 phút không thao tác.
+// Tự khóa két khi rời app hoặc sau 3 phút không thao tác; đồng bộ khi quay lại.
 document.addEventListener('visibilitychange', () => {
-  if (document.hidden && V) { lockVault(); if (tab === 'vault') render(); }
-  if (!document.hidden) { checkReminders(); render(); }
+  if (document.hidden) { if (V) { lockVault(); if (tab === 'vault') render(); } return; }
+  checkReminders(); render(); scheduleSync(300);
 });
+window.addEventListener('online', () => scheduleSync(500));
 setInterval(() => {
-  if (V && Date.now() - lastActive > 180e3) { lockVault(); closeDlg(); if (tab === 'vault') render(); toast('Két đã tự khóa'); }
+  if (V && now() - lastActive > 180e3) { lockVault(); closeDlg(); if (tab === 'vault') render(); toast('Két đã tự khóa'); }
   checkReminders();
 }, 15e3);
+setInterval(() => { if (!document.hidden) scheduleSync(0); }, 120e3);
 
 // ---------- Vẽ màn hình ----------
-const VIEWS = { today: vToday, notes: vNotes, tasks: vTasks, reading: vReading, vault: vVault, week: vWeek };
+const VIEWS = { today: vToday, notes: vNotes, tasks: vTasks, reading: vReading, vault: vVault, week: vWeek, settings: vSettings };
 function render() {
   if (!VIEWS[tab]) tab = 'today';
-  const d = new Date();
-  $('#today-label').textContent = `${DOW_FULL[dowIdx(d)]}, ${d.getDate()}/${d.getMonth() + 1}/${d.getFullYear()}`;
-  document.querySelectorAll('.tabs button').forEach(b => b.classList.toggle('on', b.dataset.id === tab));
+  CH = {};
+  renderShell();
   $('#view').innerHTML = VIEWS[tab]();
+  drawCharts();
 }
 render();
 checkReminders();
+scheduleSync(800);
 
 if ('serviceWorker' in navigator && location.protocol.startsWith('http')) {
   navigator.serviceWorker.register('sw.js').catch(() => { });
