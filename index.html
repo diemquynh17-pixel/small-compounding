@@ -933,7 +933,7 @@ const SYNC_ITER = 310000;
 let SY = JSON.parse(lsGet(SYNC_KEY) || 'null');  // { token, pass, gistId, last, err }
 let syncState = 'idle';                         // idle | busy | ok | error
 let unloading = false; window.addEventListener('pagehide', () => unloading = true);
-let syncing = false, syncAgain = false, syncTimer = null, syncKeyCache = null;
+let syncing = false, syncAgain = false, syncTimer = null, syncKeyCache = null, syncForce = false;
 const syncOn = () => !!(SY && SY.token && SY.pass);
 function syncStore() { lsSet(SYNC_KEY, JSON.stringify(SY)); }
 function syncLabel() {
@@ -946,7 +946,21 @@ const syncIconClass = () => !syncOn() ? '' : syncState === 'error' ? 'warn' : 'o
 function syncRowHtml() {
   return `<button data-a="syncTap" title="${esc(syncLabel())}">${ic(syncState === 'error' ? 'cloud-off' : 'cloud')}<span class="${syncState === 'error' ? 'down' : ''}" style="font-size:13px">${esc(syncOn() ? syncLabel().replace(/^Lỗi đồng bộ:.*/, 'Lỗi đồng bộ') : 'Bật đồng bộ')}</span></button>`;
 }
+const pwField = (name, id, label, help = '') => `<label class="f">${label}<div class="row"><input type="password" name="${name}" id="${id}" minlength="8" required
+  autocomplete="off" autocapitalize="off" autocorrect="off" spellcheck="false" ${help ? `aria-describedby="${id}h"` : ''}>
+  <button type="button" class="ib" data-a="togglePw" aria-label="Hiện mật khẩu" title="Hiện hoặc ẩn">${ic('eye', 16)}</button></div>${help ? `<span class="help" id="${id}h">${help}</span>` : ''}</label>`;
 function syncPanelHtml() {
+  if (syncOn() && SY.errCode === 'badpass' && syncState !== 'busy') return `
+    <div class="status err"><span class="dot"></span><span class="grow">Mật khẩu đồng bộ trên máy này khác với mật khẩu đã dùng để lưu dữ liệu trên GitHub.</span></div>
+    <form data-f="syncRepass">
+      ${pwField('pass', 'syncPass', 'Nhập lại mật khẩu đồng bộ', 'Đúng mật khẩu bạn đã đặt ở máy kết nối đầu tiên. Bấm hình con mắt để xem lại những gì đã gõ.')}
+      <button class="btn primary">${ic('refresh', 16)}Thử lại</button>
+    </form>
+    <div style="margin-top:22px;padding-top:18px;border-top:1px solid var(--rule)">
+      <h3 style="font-size:14px;font-weight:600">Quên mật khẩu đồng bộ?</h3>
+      <p class="muted" style="line-height:21px;margin:6px 0 12px">Đặt mật khẩu mới ở ô trên rồi bấm nút dưới. App thay bản trên GitHub bằng dữ liệu của máy này. Máy kia sẽ báo lỗi này một lần: nhập mật khẩu mới ở đó, dữ liệu trên máy kia vẫn được gộp vào, không mất.</p>
+      <button class="btn danger" data-a="syncOverwrite">Đặt mật khẩu mới và ghi đè bản trên GitHub</button>
+    </div>`;
   if (syncOn()) return `
     <div class="status ${syncState === 'error' ? 'err' : syncState === 'busy' ? 'busy' : ''}"><span class="dot"></span><span class="grow">${esc(syncLabel())}</span></div>
     <p class="muted" style="line-height:21px;margin-bottom:14px">Tự đồng bộ khi mở app, khi quay lại app và vài giây sau mỗi thay đổi. Trên máy còn lại, nhập cùng token và cùng mật khẩu đồng bộ.</p>
@@ -959,7 +973,7 @@ function syncPanelHtml() {
     </ol>
     <form data-f="syncSetup">
       <label class="f">Token GitHub<input type="password" name="token" required autocomplete="off" spellcheck="false" placeholder="ghp_…"></label>
-      <label class="f">Mật khẩu đồng bộ<input type="password" name="pass" minlength="8" required autocomplete="new-password" aria-describedby="sph"><span class="help" id="sph">Ít nhất 8 ký tự. Dùng cùng một mật khẩu trên iPhone và Mac.</span></label>
+      ${pwField('pass', 'syncPass', 'Mật khẩu đồng bộ', 'Ít nhất 8 ký tự, nên dùng chữ không dấu. Gõ tay, không dùng mật khẩu Safari gợi ý. Dùng cùng một mật khẩu trên iPhone và Mac.')}
       <button class="btn primary">${ic('cloud', 16)}Kết nối và đồng bộ</button>
     </form>`;
 }
@@ -986,11 +1000,23 @@ async function findGist() {
   }
   return null;
 }
+// Cùng một chữ có dấu có thể được bàn phím Mac và iPhone mã hóa khác nhau (NFC/NFD),
+// nên khi mở dữ liệu thì thử cả hai dạng; khi lưu mới thì luôn dùng dạng NFC.
+const passVariants = p => [...new Set([p.normalize('NFC'), p, p.normalize('NFD')])];
 async function syncKey(saltB64) {
   if (syncKeyCache && syncKeyCache.salt === saltB64 && syncKeyCache.pass === SY.pass) return syncKeyCache.key;
-  const key = await deriveKey(SY.pass, unb64(saltB64), SYNC_ITER);
-  syncKeyCache = { salt: saltB64, pass: SY.pass, key };
+  const key = await deriveKey(SY.pass.normalize('NFC'), unb64(saltB64), SYNC_ITER);
+  syncKeyCache = { salt: saltB64, pass: SY.pass, key, iter: SYNC_ITER };
   return key;
+}
+async function syncOpen(p) {
+  if (syncKeyCache && syncKeyCache.salt === p.salt && syncKeyCache.pass === SY.pass) return aesOpen(syncKeyCache.key, p.iv, p.ct);
+  let err;
+  for (const v of passVariants(SY.pass)) {
+    const key = await deriveKey(v, unb64(p.salt), p.iter || SYNC_ITER);
+    try { const t = await aesOpen(key, p.iv, p.ct); syncKeyCache = { salt: p.salt, pass: SY.pass, key, iter: p.iter || SYNC_ITER }; return t; } catch (e) { err = e; }
+  }
+  throw err;
 }
 // Dạng chuẩn để so sánh hai trạng thái: mảng sắp theo id.
 function canon(s) {
@@ -1039,8 +1065,10 @@ async function syncNow(manual) {
       const f = g?.files?.[GIST_FILE];
       if (f) {
         const txt = f.truncated ? await (await fetch(f.raw_url, { cache: 'no-store' })).text() : f.content;
-        const p = JSON.parse(txt); salt = p.salt;
-        remote = normalize(JSON.parse(await aesOpen(await syncKey(p.salt), p.iv, p.ct)));
+        if (!syncForce) {
+          const p = JSON.parse(txt); salt = p.salt;
+          remote = normalize(JSON.parse(await syncOpen(p)));
+        }
       }
     }
     const before = canon(S);
@@ -1055,15 +1083,17 @@ async function syncNow(manual) {
     if (!remote || canon(remote) !== after) {
       salt = salt || b64(crypto.getRandomValues(new Uint8Array(16)));
       const sealed = await aesSeal(await syncKey(salt), JSON.stringify(S));
-      const content = JSON.stringify({ app: 'small-compounding', v: 1, salt, iter: SYNC_ITER, ...sealed, at: now() });
+      const content = JSON.stringify({ app: 'small-compounding', v: 1, salt, iter: syncKeyCache.iter, ...sealed, at: now() });
       if (SY.gistId) await gh('/gists/' + SY.gistId, { method: 'PATCH', body: JSON.stringify({ files: { [GIST_FILE]: { content } } }) });
       else { const g = await gh('/gists', { method: 'POST', body: JSON.stringify({ description: 'Small Compounding: dữ liệu đồng bộ (đã mã hóa)', public: false, files: { [GIST_FILE]: { content } } }) }); SY.gistId = g.id; }
     }
-    SY.last = now(); SY.err = null; syncStore(); setSync('ok');
+    syncForce = false;
+    SY.last = now(); SY.err = null; SY.errCode = null; syncStore(); setSync('ok');
     if (manual) toast('Đã đồng bộ');
   } catch (e) {
     if (unloading) return;
-    SY.err = syncErrorText(e); syncStore(); setSync('error');
+    syncForce = false;
+    SY.err = syncErrorText(e); SY.errCode = e.name === 'OperationError' ? 'badpass' : null; syncStore(); setSync('error');
     if (manual) toast(SY.err);
   } finally {
     syncing = false;
@@ -1164,6 +1194,13 @@ const A = {
   },
   syncTap() { if (syncOn()) syncNow(true); else A.tab('settings'); },
   syncNow() { syncNow(true); },
+  togglePw(_, b) { const i = b.parentElement.querySelector('input'); const show = i.type === 'password'; i.type = show ? 'text' : 'password'; b.innerHTML = ic(show ? 'eye-off' : 'eye', 16); },
+  syncOverwrite() {
+    const v = $('#syncPass')?.value || '';
+    if (v.length < 8) { toast('Nhập mật khẩu đồng bộ mới, ít nhất 8 ký tự'); $('#syncPass')?.focus(); return; }
+    if (!confirm('Thay bản trên GitHub bằng dữ liệu của máy này, khóa bằng mật khẩu mới? Trên máy kia bạn sẽ cần nhập mật khẩu mới này.')) return;
+    SY.pass = v; syncKeyCache = null; syncForce = true; syncStore(); syncNow(true);
+  },
   syncOff() { if (confirm('Ngắt đồng bộ trên máy này? Dữ liệu trên máy và trên GitHub vẫn giữ nguyên.')) { SY = null; lsSet(SYNC_KEY, 'null'); syncState = 'idle'; render(); } }
 };
 
@@ -1207,6 +1244,7 @@ const F = {
     await sealVault(); closeDlg(); render(); toast('Đã lưu và mã hóa');
   },
   async vaultNewPw(fd) { if (fd.get('pw') !== fd.get('pw2')) return toast('Hai mật khẩu không khớp'); await createVault(fd.get('pw'), V.items); closeDlg(); render(); toast('Đã đổi mật khẩu chính'); },
+  syncRepass(fd) { SY.pass = fd.get('pass'); syncKeyCache = null; syncStore(); syncNow(true); },
   async syncSetup(fd, form) {
     SY = { token: fd.get('token').trim(), pass: fd.get('pass') }; syncStore();
     form.querySelector('button').disabled = true;
