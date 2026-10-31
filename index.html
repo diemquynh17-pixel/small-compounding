@@ -605,6 +605,7 @@ function noteListHtml() {
       <div class="meta"><span class="when num">${n.pinned ? 'Đã ghim · ' : ''}${fmtTime(n.created)}</span>
         <button class="ib ${n.pinned ? 'on' : ''}" data-a="pinNote" data-id="${n.id}" aria-label="${n.pinned ? 'Bỏ ghim' : 'Ghim'}" title="${n.pinned ? 'Bỏ ghim' : 'Ghim'}">${ic('pin', 16)}</button>
         <button class="ib" data-a="copyNote" data-id="${n.id}" aria-label="Sao chép" title="Sao chép">${ic('copy', 16)}</button>
+        <button class="ib" data-a="obsNote" data-id="${n.id}" aria-label="Gửi sang Obsidian" title="Gửi sang Obsidian">${ic('external-link', 16)}</button>
         <button class="ib" data-a="editNote" data-id="${n.id}" aria-label="Sửa" title="Sửa">${ic('pencil', 16)}</button>
         <button class="ib" data-a="delNote" data-id="${n.id}" aria-label="Xóa" title="Xóa">${ic('trash', 16)}</button></div>
     </article>`).join('') || `<div class="empty">${q ? 'Không có ghi chú nào khớp với tìm kiếm.' : 'Chưa có ghi chú nào. Viết suy nghĩ đầu tiên ở trên.'}</div>`;
@@ -678,6 +679,7 @@ function vReading() {
           ${r.note ? `<div class="t2" style="color:var(--text);margin-top:6px;white-space:pre-wrap">${esc(r.note)}</div>` : ''}</span>
         <select data-c="readStatus" data-id="${r.id}" style="width:auto;height:32px" aria-label="Trạng thái ${esc(r.title)}">${Object.entries(RSTAT).map(([k, v]) => `<option value="${k}" ${r.status === k ? 'selected' : ''}>${v}</option>`).join('')}</select>
         <button class="ib" data-a="noteReading" data-id="${r.id}" title="Ghi cảm nhận" aria-label="Ghi cảm nhận">${ic('pencil', 16)}</button>
+        <button class="ib" data-a="obsReading" data-id="${r.id}" title="Gửi sang Obsidian" aria-label="Gửi sang Obsidian">${ic('external-link', 16)}</button>
         <button class="ib" data-a="delReading" data-id="${r.id}" title="Xóa" aria-label="Xóa">${ic('trash', 16)}</button></li>`).join('') || '<li class="empty" style="margin-top:8px">Chưa có gì trong mục này.</li>'}</ul>
     </section>
     <section class="panel s4">
@@ -767,6 +769,47 @@ function vaultListHtml() {
     <button class="ib" data-a="vaultEdit" data-id="${it.id}" aria-label="Sửa" title="Sửa">${ic('pencil', 16)}</button></li>`).join('')
     || `<li class="empty">${q ? 'Không tìm thấy.' : 'Két trống. Bấm Thêm để lưu mật khẩu đầu tiên.'}</li>`;
 }
+// ---------- Obsidian ----------
+// Gửi sang Obsidian bằng liên kết obsidian:// (Obsidian hỗ trợ chính thức). Cài đặt này riêng cho từng máy.
+const OBS_KEY = 'sc.obs';
+let OBS = Object.assign({ vault: "Quinn's Board", folder: 'Small Compounding' }, JSON.parse(lsGet(OBS_KEY) || '{}'));
+const safeName = s => String(s || '').replace(/[\\/:*?"<>|#^[\]]+/g, '-').replace(/\s+/g, ' ').trim().slice(0, 80) || 'Không tên';
+function obsSend(file, content, label) {
+  const f = [OBS.folder, file].filter(Boolean).join('/');
+  location.href = `obsidian://new?vault=${encodeURIComponent(OBS.vault)}&file=${encodeURIComponent(f)}&content=${encodeURIComponent(content)}&overwrite=true`;
+  toast(`Đang mở Obsidian: ${label}`);
+}
+function isoWeek(d) {
+  const t = new Date(Date.UTC(d.getFullYear(), d.getMonth(), d.getDate()));
+  const day = t.getUTCDay() || 7; t.setUTCDate(t.getUTCDate() + 4 - day);
+  const y = t.getUTCFullYear(), w = Math.ceil(((t - Date.UTC(y, 0, 1)) / 864e5 + 1) / 7);
+  return `${y}-W${pad(w)}`;
+}
+function weekMarkdown(ws) {
+  const cur = weekStats(ws), prev = weekStats(addDays(ws, -7)), days = cur.days, set = new Set(days);
+  const tasks = S.tasks.filter(t => set.has(t.date)).sort((a, b) => a.date.localeCompare(b.date));
+  const books = S.readings.filter(r => r.finished && set.has(r.finished));
+  const md = [
+    '---', 'type: weekly', `week: ${isoWeek(ws)}`, `from: ${days[0]}`, `to: ${days[6]}`, `total_minutes: ${cur.totalMin}`, `checks: ${cur.checks}`, 'tags: [small-compounding]', '---',
+    `# Tuần ${fmtDM(ws)} – ${fmtDM(addDays(ws, 6))}`, '',
+    `Tổng thời gian **${fmtMin(cur.totalMin)}** (tuần trước ${fmtMin(prev.totalMin)}). Lượt check **${cur.checks}/${S.habits.length * 7}** (tuần trước ${prev.checks}). Việc đã xong **${cur.tasksDone}/${cur.tasksTotal}**.`, '',
+    '## Thói quen', '',
+    `| Thói quen | ${DOW.join(' | ')} | Ngày | Thời gian | Tuần trước |`,
+    `|---|${DOW.map(() => ':-:').join('|')}|--:|--:|--:|`,
+    ...S.habits.map(h => { const a = cur.habits[h.id], b = prev.habits[h.id]; return `| ${h.name} | ${a.marks.map(m => m ? '✓' : '·').join(' | ')} | ${a.days}/7 | ${fmtMin(a.min)} | ${fmtMin(b.min)} |`; }),
+    '', '## Việc', '',
+    ...(tasks.length ? tasks.map(t => `- [${t.done ? 'x' : ' '}] ${t.title} (${fmtDay(t.date)}${t.min ? ', ' + fmtMin(t.min) : ''})`) : ['Không có việc nào.']),
+    '', '## Sách đọc xong', '',
+    ...(books.length ? books.map(r => `- ${r.title}${r.author ? ' — ' + r.author : ''}`) : ['Chưa có.']),
+    '', `*Ghi từ Small Compounding lúc ${fmtTime(now())}*`, ''
+  ];
+  return md.join('\n');
+}
+function readingMarkdown(r) {
+  return ['---', `title: "${r.title.replace(/"/g, "'")}"`, r.author ? `author: "${r.author.replace(/"/g, "'")}"` : null, `status: ${RSTAT[r.status]}`,
+    r.finished ? `finished: ${r.finished}` : null, r.link ? `link: ${r.link}` : null, 'tags: [small-compounding, sach]', '---',
+    `# ${r.title}`, '', r.note || '', ''].filter(x => x !== null).join('\n');
+}
 async function copyText(t, label) {
   try { await navigator.clipboard.writeText(t); toast(`Đã sao chép ${label}`); } catch (e) { toast('Không sao chép được'); }
 }
@@ -794,7 +837,7 @@ function vWeek() {
   const total = weeks[weeks.length - 1].total;
   const first = Object.keys(S.logs).sort()[0];
 
-  return head('Tổng kết tuần', finding, weekNav(weekOff, 'weekNav')) + `
+  return head('Tổng kết tuần', finding, weekNav(weekOff, 'weekNav') + `<button class="btn" data-a="obsWeek">${ic('external-link', 16)}Ghi vào Obsidian</button>`) + `
   <div class="stack">
     <section class="strip4" aria-label="Chỉ số tuần">
       <div class="kv"><span class="k">Tổng thời gian</span><span class="v lead">${fmtMinHtml(cur.totalMin)}</span><span class="d">${delta(cur.totalMin, prev.totalMin, fmtMin)}</span></div>
@@ -889,6 +932,20 @@ function vSettings() {
   <section class="set">
     <div class="lbl"><h2>Đồng bộ iPhone và Mac</h2><p>Dữ liệu được mã hóa trên máy rồi mới lưu vào một gist bí mật trong tài khoản GitHub của bạn. GitHub chỉ thấy chuỗi ký tự đã mã hóa.</p></div>
     <div class="panel">${syncPanelHtml()}</div>
+  </section>
+  <section class="set">
+    <div class="lbl"><h2>Obsidian</h2><p>Gửi ghi chú, sách và tổng kết tuần vào vault. Để Việc hôm nay tự đồng bộ hai chiều với Daily note, cài plugin Small Compounding Sync.</p></div>
+    <div class="panel">
+      <label class="f">Tên vault<input type="text" value="${esc(OBS.vault)}" data-c="obsSet" data-id="vault" autocomplete="off"></label>
+      <label class="f">Thư mục trong vault<input type="text" value="${esc(OBS.folder)}" data-c="obsSet" data-id="folder" autocomplete="off"><span class="help">Ghi chú vào ${esc(OBS.folder || '…')}/Ghi chú, sách vào /Sách, tổng kết vào /Tuần.</span></label>
+      <h3 style="font-size:14px;font-weight:600;margin-top:6px">Plugin đồng bộ Việc hôm nay</h3>
+      <p class="muted" style="line-height:21px;margin:6px 0 12px">Tải hai file dưới vào thư mục <span class="num">.obsidian/plugins/small-compounding-sync/</span> của vault trên Mac, bật plugin trong Obsidian, rồi dán mã kết nối vào cài đặt của plugin.</p>
+      <div class="row wrap">
+        <a class="btn" href="obsidian-plugin/small-compounding-sync/main.js" download="main.js">${ic('download', 16)}main.js</a>
+        <a class="btn" href="obsidian-plugin/small-compounding-sync/manifest.json" download="manifest.json">${ic('download', 16)}manifest.json</a>
+        ${syncOn() ? `<button class="btn" data-a="copyPair">${ic('copy', 16)}Sao chép mã kết nối</button>` : ''}
+      </div>
+    </div>
   </section>
   <section class="set">
     <div class="lbl"><h2>Thói quen hằng ngày</h2><p>Những mục hiện trong Daily check. Mục tiêu là số phút mỗi ngày, dùng để tính tiến độ tuần.</p></div>
@@ -1049,10 +1106,15 @@ async function syncOpen(p) {
   }
   throw err;
 }
-// Dạng chuẩn để so sánh hai trạng thái: mảng sắp theo id.
+// Dạng chuẩn để so sánh hai trạng thái: khóa sắp xếp ở mọi tầng, mảng bản ghi sắp theo id.
+function stable(v) {
+  if (Array.isArray(v)) return '[' + v.map(stable).join(',') + ']';
+  if (v && typeof v === 'object') return '{' + Object.keys(v).sort().filter(k => v[k] !== undefined).map(k => JSON.stringify(k) + ':' + stable(v[k])).join(',') + '}';
+  return JSON.stringify(v === undefined ? null : v);
+}
 function canon(s) {
   const c = { ...s }; COLLS.forEach(k => c[k] = [...(s[k] || [])].sort((a, b) => a.id < b.id ? -1 : a.id > b.id ? 1 : 0));
-  return JSON.stringify(c, Object.keys(c).sort());
+  return stable(c);
 }
 const ts = o => o.u || o.created || o.added || 0;
 function mergeState(a, b) {
@@ -1231,6 +1293,9 @@ const A = {
   syncTap() { if (syncOn()) syncNow(true); else A.tab('settings'); },
   syncNow() { syncNow(true); },
   copyPair() { copyText(pairCode(), 'mã kết nối'); },
+  obsNote(id) { const n = S.notes.find(x => x.id === id); obsSend(`Ghi chú/${ymd(new Date(n.created))} ${safeName(n.text.split('\n')[0].slice(0, 40))}`, `${n.text}\n\n*Từ Small Compounding, ${fmtTime(n.created)}*\n`, 'ghi chú'); },
+  obsReading(id) { const r = S.readings.find(x => x.id === id); obsSend(`Sách/${safeName(r.title)}`, readingMarkdown(r), r.title); },
+  obsWeek() { const ws = addDays(weekStart(new Date()), weekOff * 7); obsSend(`Tuần/${isoWeek(ws)}`, weekMarkdown(ws), 'tổng kết tuần'); },
   togglePw(_, b) { const i = b.parentElement.querySelector('input'); const show = i.type === 'password'; i.type = show ? 'text' : 'password'; b.innerHTML = ic(show ? 'eye-off' : 'eye', 16); },
   syncOverwrite() {
     const v = $('#syncPass')?.value || '';
@@ -1244,6 +1309,7 @@ const A = {
 // ---------- Thay đổi ô nhập ----------
 const C = {
   habitMin(id, el) { const e = logEntry(todayStr(), id); e.min = Math.max(0, +el.value || 0); if (e.min > 0) e.done = true; touch(e); save(); render(); },
+  obsSet(id, el) { OBS[id] = el.value.trim(); lsSet(OBS_KEY, JSON.stringify(OBS)); toast('Đã lưu cài đặt Obsidian'); },
   taskMin(id, el) { const x = findTask(id); x.min = Math.max(0, +el.value || 0); touch(x); save(); },
   readStatus(id, el) { const r = S.readings.find(x => x.id === id); r.status = el.value; r.finished = r.status === 'done' ? (r.finished || todayStr()) : null; touch(r); save(); render(); }
 };

@@ -1,0 +1,9 @@
+{
+  "id": "small-compounding-sync",
+  "name": "Small Compounding Sync",
+  "version": "1.0.0",
+  "minAppVersion": "1.4.0",
+  "description": "Đồng bộ hai chiều danh sách Việc hôm nay của app Small Compounding với Daily note.",
+  "author": "Small Compounding",
+  "isDesktopOnly": false
+}
