@@ -512,10 +512,20 @@ async function geminiVideo(url) {
       properties: { title: { type: 'STRING' }, channel: { type: 'STRING' }, summary: { type: 'STRING' }, mindmap: { type: 'STRING' } },
       required: ['title', 'summary', 'mindmap'] } }
   };
-  const r = await fetch(`https://generativelanguage.googleapis.com/v1beta/models/${encodeURIComponent(AI.model || 'gemini-flash-latest')}:generateContent`,
-    { method: 'POST', headers: { 'Content-Type': 'application/json', 'x-goog-api-key': AI.key }, body: JSON.stringify(body) });
-  const j = await r.json().catch(() => ({}));
-  if (!r.ok) throw new Error(j.error?.message || `HTTP ${r.status}`);
+  // Google quá tải (503/429/500): chờ rồi thử lại, sau đó chuyển sang model dự phòng nhẹ hơn.
+  const models = [...new Set([AI.model || 'gemini-flash-latest', 'gemini-flash-latest', 'gemini-flash-lite-latest'])];
+  let r, j, tries = 0;
+  for (const m of models) {
+    for (let k = 0; k < 2; k++) {
+      if (tries++) await new Promise(res => setTimeout(res, 4000 * tries));
+      r = await fetch(`https://generativelanguage.googleapis.com/v1beta/models/${encodeURIComponent(m)}:generateContent`,
+        { method: 'POST', headers: { 'Content-Type': 'application/json', 'x-goog-api-key': AI.key }, body: JSON.stringify(body) });
+      j = await r.json().catch(() => ({}));
+      if (r.ok || ![429, 500, 503].includes(r.status)) break;
+    }
+    if (r.ok || ![429, 500, 503, 404].includes(r.status)) break;
+  }
+  if (!r.ok) throw new Error((j.error?.message || `HTTP ${r.status}`) + ([429, 500, 503].includes(r.status) ? ' Đã thử lại nhiều lần; bấm Tóm tắt sau ít phút.' : ''));
   const txt = (j.candidates?.[0]?.content?.parts || []).filter(p => !p.thought).map(p => p.text || '').join('');
   if (!txt) throw new Error(j.promptFeedback?.blockReason ? `Bị chặn (${j.promptFeedback.blockReason})` : 'AI không trả về nội dung');
   return JSON.parse(txt);
@@ -530,7 +540,7 @@ function projOptions(sel) {
 }
 function videoItem(v, t) {
   const busy = aiBusy.has(v.id);
-  const st = busy ? 'Đang tóm tắt…' : v.err ? `<span class="down">Lỗi: ${esc(v.err)}</span>` : v.summary ? 'Đã có note' : 'Chưa tóm tắt';
+  const st = busy ? 'Đang tóm tắt… (có thể mất 1–2 phút)' : v.err ? `<span class="down">Lỗi: ${esc(v.err)}</span>` : v.summary ? 'Đã có note' : 'Chưa tóm tắt';
   const act = busy ? '' : v.summary
     ? `<button class="btn sm" data-a="viewVideo" data-id="${v.id}">${ic('notes', 16)}Note</button>`
     : `<button class="btn sm" data-a="sumVideo" data-id="${v.id}">${ic('wand', 16)}Tóm tắt</button>`;
