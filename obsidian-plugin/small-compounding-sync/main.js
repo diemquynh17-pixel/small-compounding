@@ -2,6 +2,8 @@
 /* =========================================================
    Small Compounding Sync — plugin Obsidian
    Đồng bộ hai chiều "Việc hôm nay" của app Small Compounding với Daily note.
+   Ghi mỗi video YouTube đã xem (có note do AI tóm tắt) thành một note riêng trong
+   Projects/<dự án>/YouTube/ (chưa phân loại thì vào Small Compounding/YouTube/).
    - Đọc/ghi cùng gist đồng bộ (đã mã hóa AES-GCM) mà app dùng, mở bằng mã kết nối.
    - Chỉ sửa nội dung nằm giữa hai dấu %% small-compounding:start %% và %% small-compounding:end %%.
    ========================================================= */
@@ -12,8 +14,8 @@ const PAIR_PREFIX = 'SC1.';
 const START = '%% small-compounding:start %%';
 const END = '%% small-compounding:end %%';
 const LINE_RE = /^\s*[-*]\s+\[( |x|X)\]\s+(.*?)\s*(?:%%\s*sc:([\w-]+)\s*%%)?\s*$/;
-const COLLS = ['notes', 'tasks', 'readings', 'reminders'];
-const DEFAULTS = { token: '', pass: '', gistId: '', folder: '', format: '', heading: 'Việc hôm nay', interval: 60, lastWritten: {} };
+const COLLS = ['notes', 'tasks', 'readings', 'reminders', 'videos'];
+const DEFAULTS = { token: '', pass: '', gistId: '', folder: '', format: '', heading: 'Việc hôm nay', interval: 60, lastWritten: {}, videos: true, videoFiles: {} };
 
 // ---------- Mã hóa (giống hệt app) ----------
 const enc = new TextEncoder(), dec = new TextDecoder();
@@ -34,7 +36,7 @@ function parsePair(code) {
   try { const o = JSON.parse(decodeURIComponent(escape(atob(code.slice(PAIR_PREFIX.length))))); return o.t && o.p ? o : null; } catch (e) { return null; }
 }
 function normalizeState(s) {
-  s = Object.assign({ notes: [], tasks: [], readings: [], reminders: [], logs: {}, del: {}, habits: [] }, s || {});
+  s = Object.assign({ notes: [], tasks: [], readings: [], reminders: [], videos: [], logs: {}, del: {}, habits: [] }, s || {});
   COLLS.forEach(c => { if (!Array.isArray(s[c])) s[c] = []; });
   if (!s.del || typeof s.del !== 'object') s.del = {};
   return s;
@@ -100,6 +102,23 @@ function applyEdits(state, block, today, last) {
 }
 const tasksFor = (state, day) => state.tasks.filter(t => t.date === day).sort((a, b) => (a.created || 0) - (b.created || 0));
 
+// ---------- Note video YouTube ----------
+const safeName = s => String(s || '').replace(/[\\/:*?"<>|#^[\]]+/g, '-').replace(/\s+/g, ' ').trim().slice(0, 80) || 'Không tên';
+const yq = s => '"' + String(s || '').replace(/\\/g, '\\\\').replace(/"/g, '\\"').replace(/\s*\n\s*/g, ' ') + '"';
+function videoMarkdown(v, state, projLink) {
+  const h = (state.habits || []).find(x => x.id === v.habitId);
+  const title = v.title || ('Video ' + v.vid);
+  return [
+    '---', 'type: youtube', `title: ${yq(title)}`, v.channel ? `channel: ${yq(v.channel)}` : null, `url: ${v.url}`, `watched: ${v.date}`,
+    `project: ${yq(projLink || '')}`, h ? `habit: ${yq(h.name)}` : null, 'tags: [youtube, small-compounding]', `sc_id: ${v.id}`, '---',
+    `# ${title}`, '', `![](${v.url})`, '',
+    `Xem ngày [[${v.date}]]${v.channel ? ' · Kênh ' + v.channel : ''}${projLink ? ' · Dự án ' + projLink : ''}`, '',
+    String(v.summary || '').trim(), '',
+    ...(v.mindmap ? ['## Mindmap', '', '```markmap', String(v.mindmap).trim().replace(/```/g, "'''"), '```', ''] : []),
+    '*Tạo từ Small Compounding (tóm tắt bằng Gemini). Sửa note này trong Obsidian thì app sẽ không ghi đè nữa.*', ''
+  ].filter(x => x !== null).join('\n');
+}
+
 // ---------- Plugin ----------
 class SmallCompoundingSync extends Plugin {
   async onload() {
@@ -114,6 +133,11 @@ class SmallCompoundingSync extends Plugin {
     this.registerEvent(this.app.vault.on('modify', f => {
       if (Date.now() < this.ignoreUntil || !(f instanceof TFile) || f.path !== this.dailyPath()) return;
       clearTimeout(this.timer); this.timer = setTimeout(() => this.sync(false), 2500);
+    }));
+    // Người dùng tự đổi tên hoặc chuyển note video: ghi nhận chỗ mới, không chuyển ngược lại.
+    this.registerEvent(this.app.vault.on('rename', (f, old) => {
+      if (this.selfRename) return;
+      for (const r of Object.values(this.settings.videoFiles || {})) if (r.path === old) { r.path = f.path; r.moved = true; this.saveSettings(); }
     }));
     this.registerEvent(this.app.workspace.on('file-open', f => { if (f && f.path === this.dailyPath()) this.sync(false); }));
     this.registerInterval(window.setInterval(() => this.sync(false), Math.max(30, +this.settings.interval || 60) * 1000));
@@ -135,6 +159,52 @@ class SmallCompoundingSync extends Plugin {
     try { await this.app.commands.executeCommandById('daily-notes'); } catch (e) { }
     for (let i = 0; i < 20 && !this.app.vault.getAbstractFileByPath(this.dailyPath()); i++) await new Promise(r => setTimeout(r, 150));
     if (!this.app.vault.getAbstractFileByPath(this.dailyPath())) await this.app.vault.create(this.dailyPath(), `## ${this.settings.heading}\n`);
+  }
+
+  async ensureFolder(dir) {
+    let cur = '';
+    for (const part of dir.split('/')) {
+      cur = cur ? cur + '/' + part : part;
+      if (!this.app.vault.getAbstractFileByPath(cur)) { try { await this.app.vault.createFolder(cur); } catch (e) { } }
+    }
+  }
+  // Ghi note cho từng video đã có tóm tắt. Trả về số note vừa tạo hoặc cập nhật.
+  // Không bao giờ ghi đè note người dùng đã sửa, không xóa note khi video bị bỏ trong app.
+  async syncVideos(state) {
+    if (this.settings.videos === false) return 0;
+    const vault = this.app.vault, files = this.settings.videoFiles || (this.settings.videoFiles = {});
+    let n = 0, dirty = false;
+    for (const v of state.videos || []) {
+      if (!v || !v.id || !v.summary || (state.del[v.id] || 0) >= (v.u || 0)) continue;
+      const p = String(v.project || '').trim(), pn = p && safeName(p);
+      const dir = p ? normalizePath(`Projects/${pn}/YouTube`) : 'Small Compounding/YouTube';
+      const projNote = p ? vault.getAbstractFileByPath(normalizePath(`Projects/${pn}/${pn}.md`)) : null;
+      const content = videoMarkdown(v, state, projNote ? `[[${projNote.path.replace(/\.md$/, '')}|${p}]]` : p);
+      const rec = files[v.id];
+      let target = normalizePath(`${dir}/${v.date} ${safeName(v.title || v.vid)}.md`);
+      if (rec) {
+        const file = vault.getAbstractFileByPath(rec.path);
+        if (!(file instanceof TFile)) continue;              // người dùng đã xóa hoặc chuyển ra ngoài: không tạo lại
+        const cur = await vault.read(file);
+        if (cur !== rec.text) continue;                      // người dùng đã sửa: giữ nguyên
+        if (rec.moved) target = rec.path;
+        if (target !== rec.path && !vault.getAbstractFileByPath(target)) {
+          await this.ensureFolder(target.split('/').slice(0, -1).join('/'));
+          this.selfRename = true;
+          try { await this.app.fileManager.renameFile(file, target); } finally { this.selfRename = false; }
+        }
+        if (cur !== content) await vault.modify(file, content);
+        if (file.path !== rec.path || cur !== content) { n++; files[v.id] = { path: file.path, text: content, moved: !!rec.moved }; dirty = true; }
+      } else {
+        if (vault.getAbstractFileByPath(target)) target = target.replace(/\.md$/, ` (${v.id.slice(0, 5)}).md`);
+        if (vault.getAbstractFileByPath(target)) continue;
+        await this.ensureFolder(target.split('/').slice(0, -1).join('/'));
+        const file = await vault.create(target, content);
+        files[v.id] = { path: file.path, text: content }; n++; dirty = true;
+      }
+    }
+    if (dirty) await this.saveSettings();
+    return n;
   }
 
   async gh(path, method = 'GET', body) {
@@ -189,6 +259,9 @@ class SmallCompoundingSync extends Plugin {
     this.busy = true; this.setStatus('Small Compounding: đang đồng bộ…');
     try {
       const { p, state } = await this.loadRemote();
+      let nv = 0;
+      try { nv = await this.syncVideos(state); } catch (e) { console.error('[small-compounding-sync] video', e); }
+      if (nv) new Notice(`Small Compounding: đã ghi ${nv} note video YouTube`);
       const today = moment().format('YYYY-MM-DD');
       const file = this.app.vault.getAbstractFileByPath(this.dailyPath());
       if (!(file instanceof TFile)) {
@@ -244,10 +317,12 @@ class SettingTab extends PluginSettingTab {
       .addText(t => t.setValue(s.heading).onChange(async v => { s.heading = v.trim() || DEFAULTS.heading; await this.plugin.saveSettings(); }));
     new Setting(containerEl).setName('Đồng bộ mỗi (giây)').setDesc('Áp dụng sau khi tắt và bật lại plugin. Tối thiểu 30.')
       .addText(t => t.setValue(String(s.interval)).onChange(async v => { s.interval = Math.max(30, +v || 60); await this.plugin.saveSettings(); }));
+    new Setting(containerEl).setName('Ghi note video YouTube').setDesc('Mỗi video đã xem (có tóm tắt AI) thành một note trong Projects/<dự án>/YouTube. Note bạn đã sửa sẽ không bị ghi đè.')
+      .addToggle(t => t.setValue(s.videos !== false).onChange(async v => { s.videos = v; await this.plugin.saveSettings(); }));
     new Setting(containerEl).addButton(b => b.setButtonText('Đồng bộ ngay').setCta().onClick(() => this.plugin.sync(true)))
       .addButton(b => b.setButtonText('Ngắt kết nối').onClick(async () => { Object.assign(s, { token: '', pass: '', gistId: '' }); await this.plugin.saveSettings(); this.display(); }));
   }
 }
 
 module.exports = SmallCompoundingSync;
-module.exports._test = { parseBlock, writeBlock, applyEdits, blockText, parsePair };
+module.exports._test = { parseBlock, writeBlock, applyEdits, blockText, parsePair, videoMarkdown, safeName };

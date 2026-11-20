@@ -179,6 +179,14 @@ label.f .help{display:block;font-weight:400;color:var(--muted);font-size:13px;ma
 .strip i.on{background:var(--accent)}
 .strip i.today{box-shadow:inset 0 0 0 1.5px var(--accent)}
 .strip i.on.today{box-shadow:none}
+/* Video YouTube đã xem (dưới thói quen có bật "Link video") */
+.yt{grid-column:2 / -1;min-width:0}
+.yt .li{min-height:40px}
+.yt .t1 a{color:var(--text);text-decoration:none;font-weight:500}
+.yt .t1 a:hover{color:var(--accent-deep);text-decoration:underline}
+.yt form{display:flex;gap:8px;flex-wrap:wrap;margin-top:6px}
+.yt form input[type=url]{flex:1 1 220px;min-width:0}
+.yt form select{flex:0 1 170px}
 @media (max-width:600px){
   .habit{grid-template-columns:40px 1fr;row-gap:10px}
   .habit .strip{grid-column:2}
@@ -353,10 +361,12 @@ function lsSet(k, v) { try { localStorage.setItem(k, v); return true; } catch (e
 
 // ---------- Dữ liệu ----------
 const KEY = 'small-compounding.v1';
-const COLLS = ['notes', 'tasks', 'readings', 'reminders'];
+const COLLS = ['notes', 'tasks', 'readings', 'reminders', 'videos'];
+const DEFAULT_PROJECTS = ['Insight Desk', 'CFA', 'Instagram', 'Personal Space'];
 function defaultState() {
   return {
-    v: 2, notes: [], tasks: [], readings: [], reminders: [], logs: {}, vault: null, del: {}, habitsU: 0,
+    v: 2, notes: [], tasks: [], readings: [], reminders: [], videos: [], logs: {}, vault: null, del: {}, habitsU: 0,
+    projects: [...DEFAULT_PROJECTS], projectsU: 0,
     habits: [
       { id: 'health', name: 'Sức khỏe', target: 15 },
       { id: 'gym', name: 'Gym / Tập luyện', target: 45 },
@@ -369,6 +379,7 @@ function normalize(s) {
   COLLS.forEach(c => { if (!Array.isArray(s[c])) s[c] = []; s[c].forEach(x => { if (!x.u) x.u = x.created || x.added || 1; }); });
   if (!s.del || typeof s.del !== 'object') s.del = {};
   if (!s.logs || typeof s.logs !== 'object') s.logs = {};
+  if (!Array.isArray(s.projects)) s.projects = [...DEFAULT_PROJECTS];
   return s;
 }
 let S = normalize(JSON.parse(lsGet(KEY) || 'null'));
@@ -474,6 +485,82 @@ function weekNav(off, action) {
 
 // ---------- Màn hình: Hôm nay ----------
 function greeting() { const h = new Date().getHours(); return h < 11 ? 'Chào buổi sáng' : h < 13 ? 'Chào buổi trưa' : h < 18 ? 'Chào buổi chiều' : 'Chào buổi tối'; }
+// ---------- Video YouTube đã xem + tóm tắt bằng Gemini ----------
+// Thói quen có ô link video: bật trong Cài đặt, hoặc tên có chữ "youtube" (khi chưa chỉnh).
+const isYt = h => h.yt ?? /youtube/i.test(h.name);
+const ytId = u => { const m = String(u || '').match(/(?:youtu\.be\/|youtube\.com\/(?:watch\?(?:.*&)?v=|shorts\/|live\/|embed\/))([\w-]{11})/); return m ? m[1] : null; };
+const ytUrl = id => `https://www.youtube.com/watch?v=${id}`;
+const AI_KEY = 'sc.ai';  // API key chỉ lưu trên máy này, không đồng bộ, không nằm trong file sao lưu
+let AI = Object.assign({ key: '', model: 'gemini-flash-latest' }, JSON.parse(lsGet(AI_KEY) || '{}'));
+const aiBusy = new Set();   // id video đang được tóm tắt
+const AI_PROMPT = `Bạn là trợ lý ghi chép học tập. Hãy xem video YouTube đính kèm và trả về JSON với các trường:
+- title: tiêu đề gốc của video.
+- channel: tên kênh (để trống nếu không biết).
+- summary: ghi chú Markdown bằng tiếng Việt, gồm đúng các mục sau (tiêu đề cấp ##):
+  ## Tóm tắt  (3 đến 5 câu)
+  ## Ý chính  (gạch đầu dòng; mỗi ý kèm mốc thời gian dạng [mm:ss] nếu xác định được)
+  ## Khái niệm và định nghĩa
+  ## Ví dụ, số liệu đáng nhớ
+  ## Áp dụng  (2 đến 4 việc cụ thể người xem có thể làm)
+  ## Câu hỏi ôn tập  (3 câu)
+- mindmap: dàn ý Markdown cho sơ đồ tư duy. Dòng đầu là "# <chủ đề chính>", các nhánh là "## ", ý con là "- " (thụt lề cho cấp sâu hơn). Tối đa 4 cấp, mỗi ý ngắn gọn.
+Chỉ dựa vào nội dung video, không bịa số liệu. Nếu không xem được video, nói rõ điều đó trong summary.`;
+async function geminiVideo(url) {
+  const body = {
+    contents: [{ parts: [{ file_data: { file_uri: url } }, { text: AI_PROMPT }] }],
+    generationConfig: { responseMimeType: 'application/json', responseSchema: { type: 'OBJECT',
+      properties: { title: { type: 'STRING' }, channel: { type: 'STRING' }, summary: { type: 'STRING' }, mindmap: { type: 'STRING' } },
+      required: ['title', 'summary', 'mindmap'] } }
+  };
+  const r = await fetch(`https://generativelanguage.googleapis.com/v1beta/models/${encodeURIComponent(AI.model || 'gemini-flash-latest')}:generateContent`,
+    { method: 'POST', headers: { 'Content-Type': 'application/json', 'x-goog-api-key': AI.key }, body: JSON.stringify(body) });
+  const j = await r.json().catch(() => ({}));
+  if (!r.ok) throw new Error(j.error?.message || `HTTP ${r.status}`);
+  const txt = (j.candidates?.[0]?.content?.parts || []).filter(p => !p.thought).map(p => p.text || '').join('');
+  if (!txt) throw new Error(j.promptFeedback?.blockReason ? `Bị chặn (${j.promptFeedback.blockReason})` : 'AI không trả về nội dung');
+  return JSON.parse(txt);
+}
+async function ytTitle(url) {
+  try { const r = await fetch(`https://www.youtube.com/oembed?format=json&url=${encodeURIComponent(url)}`); if (r.ok) { const j = await r.json(); return { title: j.title || '', channel: j.author_name || '' }; } } catch (e) { }
+  return null;
+}
+function projOptions(sel) {
+  const list = [...S.projects]; if (sel && !list.includes(sel)) list.push(sel);
+  return `<option value="">Chưa phân loại</option>` + list.map(p => `<option ${p === sel ? 'selected' : ''}>${esc(p)}</option>`).join('');
+}
+function videoItem(v, t) {
+  const busy = aiBusy.has(v.id);
+  const st = busy ? 'Đang tóm tắt…' : v.err ? `<span class="down">Lỗi: ${esc(v.err)}</span>` : v.summary ? 'Đã có note' : 'Chưa tóm tắt';
+  const act = busy ? '' : v.summary
+    ? `<button class="btn sm" data-a="viewVideo" data-id="${v.id}">${ic('notes', 16)}Note</button>`
+    : `<button class="btn sm" data-a="sumVideo" data-id="${v.id}">${ic('wand', 16)}Tóm tắt</button>`;
+  return `<li class="li"><div class="grow" style="min-width:0">
+      <div class="t1"><a href="${esc(v.url)}" target="_blank" rel="noopener">${esc(v.title || 'Video ' + v.vid)}</a></div>
+      <div class="t2">${v.project ? esc(v.project) + ' · ' : ''}${v.date !== t ? fmtDay(v.date) + ' · ' : ''}${st}</div></div>
+    ${act}<button class="ib" data-a="delVideo" data-id="${v.id}" aria-label="Bỏ video" title="Bỏ">${ic('x', 16)}</button></li>`;
+}
+function ytBlock(h, t) {
+  // Video của hôm nay, cộng các video ngày trước chưa có note (để tóm tắt bù).
+  const vids = S.videos.filter(v => v.habitId === h.id && (v.date === t || !v.summary)).sort((a, b) => a.created - b.created);
+  return `<div class="yt">
+    ${vids.length ? `<ul class="list">${vids.map(v => videoItem(v, t)).join('')}</ul>` : ''}
+    <form data-f="addVideo"><input type="hidden" name="habit" value="${h.id}">
+      <input type="url" name="url" placeholder="Dán link YouTube đã xem" required aria-label="Link YouTube đã xem" autocomplete="off">
+      <select name="project" aria-label="Dự án">${projOptions(lsGet('sc.lastProj') || '')}</select>
+      <button class="btn sm primary">Thêm</button></form>
+  </div>`;
+}
+function videoDlg(v) {
+  return `<h2>${esc(v.title || 'Video ' + v.vid)}</h2>
+  <p class="muted small" style="margin:4px 0 14px">${v.channel ? esc(v.channel) + ' · ' : ''}Xem ${fmtDay(v.date)} · <a href="${esc(v.url)}" target="_blank" rel="noopener">Mở YouTube</a></p>
+  <form data-f="saveVideo"><input type="hidden" name="id" value="${v.id}">
+    <label class="f">Dự án<select name="project">${projOptions(v.project)}</select><span class="help">Plugin Small Compounding Sync ghi note vào Projects/&lt;dự án&gt;/YouTube trong Obsidian.</span></label>
+    <label class="f">Ghi chú (Markdown)<textarea name="summary" style="min-height:260px">${esc(v.summary || '')}</textarea></label>
+    <label class="f">Mindmap (Markdown)<textarea name="mindmap" style="min-height:140px">${esc(v.mindmap || '')}</textarea><span class="help">Trong Obsidian, phần này được vẽ thành sơ đồ tư duy (plugin Mindmap NextGen).</span></label>
+    ${dlgActs('Lưu', `<button type="button" class="btn" data-a="sumVideo" data-id="${v.id}">${ic('refresh', 16)}Tóm tắt lại</button>`)}
+  </form>`;
+}
+
 function vToday() {
   const t = todayStr(), log = S.logs[t] || {}, d = new Date();
   const ws = weekStart(d), cur = weekStats(ws), prev = weekStats(addDays(ws, -7));
@@ -493,6 +580,7 @@ function vToday() {
       <div class="strip" aria-label="Tuần này: ${w.days} trên 7 ngày">${w.marks.map((m, i) => `<i class="${m ? 'on' : ''} ${i === ti ? 'today' : ''}" title="${DOW[i]}"></i>`).join('')}</div>
       <div class="mins"><input type="number" inputmode="numeric" min="0" step="5" placeholder="0" value="${e.min || ''}" data-c="habitMin" data-id="${h.id}" aria-label="Số phút ${esc(h.name)} hôm nay"><span class="u">phút</span>
         <button class="btn sm" data-a="addMin" data-id="${h.id}">+15</button></div>
+      ${isYt(h) ? ytBlock(h, t) : ''}
     </div>`;
   }).join('');
   const overdue = S.tasks.filter(x => x.date < t && !x.done);
@@ -789,6 +877,7 @@ function weekMarkdown(ws) {
   const cur = weekStats(ws), prev = weekStats(addDays(ws, -7)), days = cur.days, set = new Set(days);
   const tasks = S.tasks.filter(t => set.has(t.date)).sort((a, b) => a.date.localeCompare(b.date));
   const books = S.readings.filter(r => r.finished && set.has(r.finished));
+  const vids = S.videos.filter(v => set.has(v.date)).sort((a, b) => a.date.localeCompare(b.date));
   const md = [
     '---', 'type: weekly', `week: ${isoWeek(ws)}`, `from: ${days[0]}`, `to: ${days[6]}`, `total_minutes: ${cur.totalMin}`, `checks: ${cur.checks}`, 'tags: [small-compounding]', '---',
     `# Tuần ${fmtDM(ws)} – ${fmtDM(addDays(ws, 6))}`, '',
@@ -799,6 +888,8 @@ function weekMarkdown(ws) {
     ...S.habits.map(h => { const a = cur.habits[h.id], b = prev.habits[h.id]; return `| ${h.name} | ${a.marks.map(m => m ? '✓' : '·').join(' | ')} | ${a.days}/7 | ${fmtMin(a.min)} | ${fmtMin(b.min)} |`; }),
     '', '## Việc', '',
     ...(tasks.length ? tasks.map(t => `- [${t.done ? 'x' : ' '}] ${t.title} (${fmtDay(t.date)}${t.min ? ', ' + fmtMin(t.min) : ''})`) : ['Không có việc nào.']),
+    '', '## Video đã xem', '',
+    ...(vids.length ? vids.map(v => `- ${v.title || v.url} (${fmtDay(v.date)}${v.project ? ', ' + v.project : ''})`) : ['Chưa có.']),
     '', '## Sách đọc xong', '',
     ...(books.length ? books.map(r => `- ${r.title}${r.author ? ' — ' + r.author : ''}`) : ['Chưa có.']),
     '', `*Ghi từ Small Compounding lúc ${fmtTime(now())}*`, ''
@@ -948,10 +1039,21 @@ function vSettings() {
     </div>
   </section>
   <section class="set">
-    <div class="lbl"><h2>Thói quen hằng ngày</h2><p>Những mục hiện trong Daily check. Mục tiêu là số phút mỗi ngày, dùng để tính tiến độ tuần.</p></div>
+    <div class="lbl"><h2>Tóm tắt video bằng AI</h2><p>Khi dán link YouTube vào Daily check, app nhờ Gemini xem video và viết note, mindmap. Key chỉ lưu trên máy này: trên iPhone cần dán lại.</p></div>
+    <div class="panel">
+      <label class="f">Gemini API key<div class="row"><input type="password" value="${esc(AI.key)}" data-c="aiSet" data-id="key" autocomplete="off" placeholder="AIza…" class="grow">
+        <button type="button" class="ib" data-a="togglePw" aria-label="Hiện key">${ic('eye', 16)}</button></div>
+        <span class="help">Tạo miễn phí tại <a href="https://aistudio.google.com/apikey" target="_blank" rel="noopener">aistudio.google.com/apikey</a> (đăng nhập Google, bấm Create API key). Gói miễn phí xem được tới 8 giờ video YouTube mỗi ngày.</span></label>
+      <label class="f">Model<input type="text" value="${esc(AI.model)}" data-c="aiSet" data-id="model" autocomplete="off"><span class="help">Mặc định gemini-flash-latest (luôn trỏ tới bản Flash mới nhất).</span></label>
+      <label class="f" style="margin-bottom:0">Dự án (mỗi dòng một dự án)<textarea data-c="projSet" style="min-height:110px">${esc(S.projects.join('\n'))}</textarea>
+        <span class="help">Nên trùng tên thư mục trong Projects/ của vault, để note video vào đúng chỗ.</span></label>
+    </div>
+  </section>
+  <section class="set">
+    <div class="lbl"><h2>Thói quen hằng ngày</h2><p>Những mục hiện trong Daily check. Mục tiêu là số phút mỗi ngày, dùng để tính tiến độ tuần. Tích ô Video để có chỗ dán link YouTube đã xem.</p></div>
     <div class="panel">
       <form data-f="saveHabits">
-        <div class="row small muted" style="margin-bottom:8px"><span class="grow">Tên</span><span style="width:96px">Phút mỗi ngày</span><span style="width:34px"></span></div>
+        <div class="row small muted" style="margin-bottom:8px"><span class="grow">Tên</span><span style="width:96px">Phút mỗi ngày</span><span style="width:52px">Video</span><span style="width:34px"></span></div>
         <div id="habitRows">${S.habits.map((h, i) => habitRow(h, i)).join('')}</div>
         <div class="row" style="margin-top:12px"><button type="button" class="btn" data-a="addHabitRow">${ic('plus', 16)}Thêm thói quen</button><span class="grow"></span><button class="btn primary">Lưu</button></div>
       </form>
@@ -980,6 +1082,7 @@ function habitRow(h, i) {
   return `<div class="row" data-hrow style="margin-bottom:8px">
     <input type="text" name="name_${i}" value="${esc(h.name)}" required aria-label="Tên thói quen" class="grow">
     <input type="number" name="target_${i}" value="${h.target || 0}" min="0" step="5" style="width:96px;flex:none" aria-label="Phút mỗi ngày">
+    <label style="width:52px;flex:none;display:grid;place-items:center" title="Có ô dán link YouTube"><input type="checkbox" name="yt_${i}" ${isYt(h) ? 'checked' : ''} aria-label="Có ô dán link YouTube"></label>
     <input type="hidden" name="id_${i}" value="${h.id}">
     <button type="button" class="ib" data-a="rmHabitRow" aria-label="Bỏ thói quen này" title="Bỏ">${ic('x', 16)}</button></div>`;
 }
@@ -1135,6 +1238,7 @@ function mergeState(a, b) {
   }
   out.logs = logs;
   if ((b.habitsU || 0) > (a.habitsU || 0)) { out.habits = b.habits; out.habitsU = b.habitsU; }
+  if ((b.projectsU || 0) > (a.projectsU || 0)) { out.projects = b.projects; out.projectsU = b.projectsU; }
   if ((b.vault?.u || 0) > (a.vault?.u || 0)) out.vault = b.vault;
   return out;
 }
@@ -1227,6 +1331,24 @@ const A = {
     if (e.done && !e.min) { const h = S.habits.find(h => h.id === id); if (h?.target) e.min = h.target; }
     touch(e); save(); render();
   },
+  async sumVideo(id) {
+    if (!AI.key) { closeDlg(); toast('Chưa có Gemini API key. Thêm trong Cài đặt.'); A.tab('settings'); return; }
+    const v0 = S.videos.find(x => x.id === id); if (!v0 || aiBusy.has(id)) return;
+    closeDlg(); aiBusy.add(id); render();
+    let o = null, err = null;
+    try { o = await geminiVideo(v0.url); } catch (e) { err = String(e.message || e).slice(0, 160); }
+    aiBusy.delete(id);
+    const v = S.videos.find(x => x.id === id);   // tìm lại: dữ liệu có thể vừa được đồng bộ thay mới
+    if (v) {
+      if (o) Object.assign(v, { title: String(o.title || v.title || '').trim(), channel: String(o.channel || v.channel || '').trim(),
+        summary: String(o.summary || '').trim(), mindmap: String(o.mindmap || '').trim(), aiAt: now(), err: null });
+      else v.err = err;
+      touch(v); save();
+    }
+    render(); toast(o ? `Đã tóm tắt: ${v?.title || ''}` : 'Không tóm tắt được video');
+  },
+  viewVideo(id) { const v = S.videos.find(x => x.id === id); if (v) openDlg(videoDlg(v)); },
+  delVideo(id) { if (confirm('Bỏ video này khỏi danh sách? Note đã ghi trong Obsidian vẫn được giữ.')) { remove('videos', id); save(); render(); } },
   addMin(id) { const e = logEntry(todayStr(), id); e.min = (+e.min || 0) + 15; e.done = true; touch(e); save(); render(); },
   toggleTask(id) { const x = findTask(id); x.done = !x.done; x.doneAt = x.done ? now() : null; touch(x); save(); render(); },
   moveTask(id) { const x = findTask(id); x.date = ymd(addDays(parseYmd(x.date), 1)); touch(x); save(); render(); toast(`Đã dời sang ${fmtDay(x.date)}`); },
@@ -1309,6 +1431,8 @@ const A = {
 // ---------- Thay đổi ô nhập ----------
 const C = {
   habitMin(id, el) { const e = logEntry(todayStr(), id); e.min = Math.max(0, +el.value || 0); if (e.min > 0) e.done = true; touch(e); save(); render(); },
+  aiSet(id, el) { AI[id] = el.value.trim() || (id === 'model' ? 'gemini-flash-latest' : ''); lsSet(AI_KEY, JSON.stringify(AI)); toast('Đã lưu cài đặt AI'); },
+  projSet(_, el) { S.projects = [...new Set(el.value.split('\n').map(x => x.trim()).filter(Boolean))]; S.projectsU = now(); save(); toast('Đã lưu danh sách dự án'); },
   obsSet(id, el) { OBS[id] = el.value.trim(); lsSet(OBS_KEY, JSON.stringify(OBS)); toast('Đã lưu cài đặt Obsidian'); },
   taskMin(id, el) { const x = findTask(id); x.min = Math.max(0, +el.value || 0); touch(x); save(); },
   readStatus(id, el) { const r = S.readings.find(x => x.id === id); r.status = el.value; r.finished = r.status === 'done' ? (r.finished || todayStr()) : null; touch(r); save(); render(); }
@@ -1316,6 +1440,23 @@ const C = {
 
 // ---------- Gửi form ----------
 const F = {
+  async addVideo(fd) {
+    const vid = ytId(fd.get('url')); if (!vid) return toast('Link YouTube không hợp lệ');
+    const t = todayStr(), project = fd.get('project') || '', habitId = fd.get('habit');
+    lsSet('sc.lastProj', project);
+    if (S.videos.some(v => v.vid === vid && v.date === t)) return toast('Video này đã có trong hôm nay');
+    const v = touch({ id: uid(), vid, url: ytUrl(vid), title: '', channel: '', habitId, project, date: t, created: now(), summary: '', mindmap: '' });
+    S.videos.push(v); save(); render();
+    const meta = await ytTitle(v.url);
+    const x = S.videos.find(y => y.id === v.id);
+    if (meta && x && !x.title) { x.title = meta.title; x.channel = meta.channel; touch(x); save(); render(); }
+    if (AI.key) A.sumVideo(v.id); else toast('Đã thêm video. Thêm Gemini API key trong Cài đặt để tự tóm tắt.');
+  },
+  saveVideo(fd) {
+    const v = S.videos.find(x => x.id === fd.get('id')); if (!v) return closeDlg();
+    v.project = fd.get('project') || ''; v.summary = fd.get('summary').trim(); v.mindmap = fd.get('mindmap').trim();
+    touch(v); save(); closeDlg(); render(); toast('Đã lưu note video');
+  },
   addTask(fd) { S.tasks.push(touch({ id: uid(), title: fd.get('title').trim(), date: fd.get('date'), done: false, min: 0, created: now() })); save(); render(); focusTaskInput(fd.get('date')); },
   addNote(fd) { const text = fd.get('text').trim(); if (!text) return; S.notes.push(touch({ id: uid(), text, created: now(), pinned: false })); save(); render(); toast('Đã lưu ghi chú'); },
   saveNote(fd) { const n = S.notes.find(x => x.id === fd.get('id')); n.text = fd.get('text').trim(); touch(n); save(); closeDlg(); render(); },
@@ -1331,7 +1472,7 @@ const F = {
     for (const [k, v] of fd.entries()) {
       const m = k.match(/^id_(.+)$/); if (!m) continue;
       const i = m[1], name = (fd.get('name_' + i) || '').trim(); if (!name) continue;
-      list.push({ id: v || uid(), name, target: Math.max(0, +fd.get('target_' + i) || 0) });
+      list.push({ id: v || uid(), name, target: Math.max(0, +fd.get('target_' + i) || 0), yt: fd.get('yt_' + i) === 'on' });
     }
     S.habits = list; S.habitsU = now(); save(); render(); toast('Đã lưu thói quen');
   },

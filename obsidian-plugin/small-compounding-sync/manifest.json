@@ -1,9 +1,9 @@
 {
   "id": "small-compounding-sync",
   "name": "Small Compounding Sync",
-  "version": "1.0.0",
+  "version": "1.1.0",
   "minAppVersion": "1.4.0",
-  "description": "Đồng bộ hai chiều danh sách Việc hôm nay của app Small Compounding với Daily note.",
+  "description": "Đồng bộ hai chiều danh sách Việc hôm nay của app Small Compounding với Daily note; ghi note video YouTube đã xem theo dự án.",
   "author": "Small Compounding",
   "isDesktopOnly": false
 }
