@@ -135,7 +135,7 @@ main{padding:20px 16px calc(96px + env(safe-area-inset-bottom))}
 .ib:hover{background:var(--active);color:var(--text)}
 .ib.on{color:var(--accent)}
 .ib.warn{color:var(--negative)}
-input[type=text],input[type=password],input[type=url],input[type=number],input[type=datetime-local],input[type=search],select,textarea{
+input[type=text],input[type=password],input[type=url],input[type=number],input[type=date],input[type=datetime-local],input[type=search],select,textarea{
   height:var(--control-h);width:100%;min-width:0;padding:0 14px;border:1px solid var(--border);border-radius:999px;background:var(--raised);outline:none}
 select{padding-right:8px}
 textarea{height:auto;min-height:96px;padding:12px 14px;border-radius:14px;resize:vertical;line-height:20px}
@@ -149,6 +149,26 @@ input:focus-visible,select:focus-visible,textarea:focus-visible{outline:none}
 label.f{display:block;font-weight:500;margin-bottom:16px}
 label.f>input,label.f>textarea,label.f>select,label.f>.row{margin-top:8px}
 label.f .help{display:block;font-weight:400;color:var(--muted);font-size:13px;margin-top:6px}
+
+/* ---------- Việc ưu tiên ---------- */
+.panel.prio{background:var(--neg-soft);box-shadow:inset 0 0 0 1.5px var(--negative);position:relative}
+.prio .ph h2{display:flex;align-items:center;gap:8px;color:var(--neg-ink)}
+.prio .ph h2 .i{color:var(--negative)}
+.prio .ph h2 small{font-size:11px;font-weight:600;letter-spacing:.08em;text-transform:uppercase;color:var(--negative)}
+.prio .ph .meta{color:var(--neg-ink)}
+.prio input[type=text],.prio input[type=date],.prio input[type=number]{background:var(--surface)}
+.prio .pf{display:grid;grid-template-columns:1fr 1fr;gap:8px}
+.prio .pf .full{grid-column:1/-1}
+.prio .pf label{display:block;font-size:12px;color:var(--neg-ink);font-weight:500}
+.prio .pf label>input{margin-top:4px;font-weight:400}
+.prio .li{border-top-color:rgba(180,35,24,.22);align-items:flex-start;padding:10px 0}
+.prio .li .ck{margin-top:2px}
+.prio .li.done .t1{color:var(--muted)}
+.prio .dl{display:inline-flex;align-items:center;gap:5px;margin-top:4px;font-size:12px;line-height:16px;font-weight:600;color:var(--neg-ink)}
+.prio .dl.late{color:#fff;background:var(--negative);padding:1px 8px;border-radius:999px}
+.prio .dl.soon{color:var(--negative)}
+.prio .li .mins{margin-top:2px}
+.prio .empty{border-color:rgba(180,35,24,.35);color:var(--neg-ink)}
 
 /* ---------- Danh sách ---------- */
 .list{list-style:none;margin:0;padding:0}
@@ -361,11 +381,11 @@ function lsSet(k, v) { try { localStorage.setItem(k, v); return true; } catch (e
 
 // ---------- Dữ liệu ----------
 const KEY = 'small-compounding.v1';
-const COLLS = ['notes', 'tasks', 'readings', 'reminders', 'videos'];
+const COLLS = ['notes', 'tasks', 'readings', 'reminders', 'videos', 'priorities'];
 const DEFAULT_PROJECTS = ['Insight Desk', 'CFA', 'Instagram', 'Personal Space'];
 function defaultState() {
   return {
-    v: 2, notes: [], tasks: [], readings: [], reminders: [], videos: [], logs: {}, vault: null, del: {}, habitsU: 0,
+    v: 2, notes: [], tasks: [], readings: [], reminders: [], videos: [], priorities: [], logs: {}, vault: null, del: {}, habitsU: 0,
     projects: [...DEFAULT_PROJECTS], projectsU: 0,
     habits: [
       { id: 'health', name: 'Sức khỏe', target: 15 },
@@ -603,13 +623,7 @@ function vToday() {
         <button class="ib" data-a="tab" data-id="settings" aria-label="Sửa thói quen" title="Sửa thói quen">${ic('pencil', 16)}</button></div>
       ${habits || '<div class="empty">Chưa có thói quen nào. Thêm trong Cài đặt.</div>'}
     </section>
-    <section class="panel s4">
-      <div class="ph"><h2>Tuần này</h2><button class="btn text sm" data-a="tab" data-id="week">Tổng kết ${ic('arrow-right', 14)}</button></div>
-      <div class="kvs">
-        <div class="kv"><span class="k">Tổng thời gian</span><span class="v lead">${fmtMinHtml(cur.totalMin)}</span><span class="d">${delta(cur.totalMin, prev.totalMin, fmtMin)}</span></div>
-        <div class="kv"><span class="k">Lượt check</span><span class="v"><span class="num">${cur.checks}</span><span class="unit">/${S.habits.length * 7}</span></span><span class="d">${delta(cur.checks, prev.checks)}</span></div>
-      </div>
-    </section>
+    ${priorityHtml()}
     <section class="panel s6">
       <div class="ph"><h2>Việc hôm nay</h2><span class="meta num">${tasks.length - leftT}/${tasks.length}</span></div>
       <form data-f="addTask" class="row"><input type="hidden" name="date" value="${t}">
@@ -618,14 +632,49 @@ function vToday() {
       ${overdue.length ? `<div class="row" style="margin-top:10px"><span class="grow down small">${overdue.length} việc quá hạn chưa xong</span><button class="btn sm" data-a="rollover">Dời sang hôm nay</button></div>` : ''}
     </section>
     <section class="panel s6">${remindersHtml()}</section>
-    <section class="panel s12">
+    <section class="panel s8">
       <div class="ph"><h2>Ghi nhanh</h2><span class="meta">${S.notes.length} ghi chú</span></div>
       <form data-f="addNote" class="row" style="align-items:flex-end;flex-wrap:wrap">
         <textarea name="text" id="quickNote" class="grow" style="flex:1 1 280px;min-height:72px" placeholder="Đang nghĩ gì? Dùng #tag để phân loại. ⌘ hoặc Ctrl + Enter để lưu." required aria-label="Ghi chú mới"></textarea>
         <button class="btn primary">Lưu ghi chú</button>
       </form>
     </section>
+    <section class="panel s4">
+      <div class="ph"><h2>Tuần này</h2><button class="btn text sm" data-a="tab" data-id="week">Tổng kết ${ic('arrow-right', 14)}</button></div>
+      <div class="kvs">
+        <div class="kv"><span class="k">Tổng thời gian</span><span class="v lead">${fmtMinHtml(cur.totalMin)}</span><span class="d">${delta(cur.totalMin, prev.totalMin, fmtMin)}</span></div>
+        <div class="kv"><span class="k">Lượt check</span><span class="v"><span class="num">${cur.checks}</span><span class="unit">/${S.habits.length * 7}</span></span><span class="d">${delta(cur.checks, prev.checks)}</span></div>
+      </div>
+    </section>
   </div>`;
+}
+// ---------- Việc ưu tiên (có deadline) ----------
+function dlInfo(p, t) {
+  const n = Math.round((parseYmd(p.deadline) - parseYmd(t)) / 864e5);
+  if (p.done) return { cls: '', txt: `Hạn ${fmtDay(p.deadline)}` };
+  if (n < 0) return { cls: 'late', txt: `Hạn ${fmtDay(p.deadline)} · quá ${-n} ngày` };
+  if (n === 0) return { cls: 'late', txt: 'Hạn hôm nay' };
+  if (n === 1) return { cls: 'soon', txt: `Hạn ngày mai · ${fmtDay(p.deadline)}` };
+  return { cls: n <= 3 ? 'soon' : '', txt: `Hạn ${fmtDay(p.deadline)} · còn ${n} ngày` };
+}
+function priorityHtml() {
+  const t = todayStr();
+  const list = S.priorities.slice().sort((a, b) => (a.done - b.done) || a.deadline.localeCompare(b.deadline) || a.created - b.created);
+  const open = list.filter(x => !x.done), planned = open.reduce((a, x) => a + (+x.plan || 0), 0);
+  return `<section class="panel s4 prio" aria-label="Việc ưu tiên">
+    <div class="ph"><h2>${ic('alert-circle', 20)}Việc ưu tiên <small>Priority</small></h2><span class="meta num">${open.length} việc${planned ? ` · ${fmtMin(planned)}` : ''}</span></div>
+    <form data-f="addPriority" class="pf">
+      <input class="full" type="text" name="title" placeholder="Việc có deadline" autocomplete="off" required aria-label="Việc ưu tiên mới">
+      <label>Deadline<input type="date" name="deadline" value="${t}" min="${t}" required></label>
+      <label>Dự định (phút)<input type="number" inputmode="numeric" name="plan" min="0" step="5" placeholder="60"></label>
+      <button class="btn primary full">Thêm việc ưu tiên</button>
+    </form>
+    <ul class="list" style="margin-top:8px">${list.map(x => { const d = dlInfo(x, t); return `<li class="li ${x.done ? 'done' : ''}">
+      <button class="ck ${x.done ? 'on' : ''}" data-a="togglePrio" data-id="${x.id}" aria-pressed="${!!x.done}" aria-label="Hoàn thành ${esc(x.title)}">${ic('check', 15)}</button>
+      <span class="grow"><span class="t1" style="font-weight:500">${esc(x.title)}</span><div><span class="dl num ${d.cls}">${d.txt}</span></div></span>
+      <span class="mins"><input type="number" inputmode="numeric" min="0" step="5" placeholder="0" value="${x.plan || ''}" data-c="prioPlan" data-id="${x.id}" aria-label="Thời gian dự định (phút)" title="Thời gian dự định"><span class="u">p</span></span>
+      <button class="ib" data-a="delPrio" data-id="${x.id}" title="Xóa" aria-label="Xóa việc ưu tiên">${ic('trash', 16)}</button></li>`; }).join('') || '<li class="empty" style="margin-top:8px">Chưa có việc ưu tiên. Thêm việc có deadline để không bị trôi.</li>'}</ul>
+  </section>`;
 }
 function taskItem(x) {
   return `<li class="li ${x.done ? 'done' : ''}">
@@ -1362,6 +1411,8 @@ const A = {
   addMin(id) { const e = logEntry(todayStr(), id); e.min = (+e.min || 0) + 15; e.done = true; touch(e); save(); render(); },
   toggleTask(id) { const x = findTask(id); x.done = !x.done; x.doneAt = x.done ? now() : null; touch(x); save(); render(); },
   moveTask(id) { const x = findTask(id); x.date = ymd(addDays(parseYmd(x.date), 1)); touch(x); save(); render(); toast(`Đã dời sang ${fmtDay(x.date)}`); },
+  togglePrio(id) { const x = S.priorities.find(y => y.id === id); x.done = !x.done; x.doneAt = x.done ? now() : null; touch(x); save(); render(); },
+  delPrio(id) { remove('priorities', id); save(); render(); },
   delTask(id) { remove('tasks', id); save(); render(); },
   rollover() { const t = todayStr(); let n = 0; S.tasks.forEach(x => { if (x.date < t && !x.done) { x.date = t; touch(x); n++; } }); save(); render(); toast(`Đã dời ${n} việc sang hôm nay`); },
   planNav(id) { planOff = id === '0' ? 0 : planOff + Number(id); render(); },
@@ -1444,6 +1495,7 @@ const C = {
   aiSet(id, el) { AI[id] = el.value.trim() || (id === 'model' ? 'gemini-flash-latest' : ''); lsSet(AI_KEY, JSON.stringify(AI)); toast('Đã lưu cài đặt AI'); },
   projSet(_, el) { S.projects = [...new Set(el.value.split('\n').map(x => x.trim()).filter(Boolean))]; S.projectsU = now(); save(); toast('Đã lưu danh sách dự án'); },
   obsSet(id, el) { OBS[id] = el.value.trim(); lsSet(OBS_KEY, JSON.stringify(OBS)); toast('Đã lưu cài đặt Obsidian'); },
+  prioPlan(id, el) { const x = S.priorities.find(y => y.id === id); x.plan = Math.max(0, +el.value || 0); touch(x); save(); render(); },
   taskMin(id, el) { const x = findTask(id); x.min = Math.max(0, +el.value || 0); touch(x); save(); },
   readStatus(id, el) { const r = S.readings.find(x => x.id === id); r.status = el.value; r.finished = r.status === 'done' ? (r.finished || todayStr()) : null; touch(r); save(); render(); }
 };
@@ -1468,6 +1520,7 @@ const F = {
     touch(v); save(); closeDlg(); render(); toast('Đã lưu note video');
   },
   addTask(fd) { S.tasks.push(touch({ id: uid(), title: fd.get('title').trim(), date: fd.get('date'), done: false, min: 0, created: now() })); save(); render(); focusTaskInput(fd.get('date')); },
+  addPriority(fd) { const title = fd.get('title').trim(); if (!title) return; S.priorities.push(touch({ id: uid(), title, deadline: fd.get('deadline') || todayStr(), plan: Math.max(0, +fd.get('plan') || 0), done: false, created: now() })); save(); render(); toast('Đã thêm việc ưu tiên'); },
   addNote(fd) { const text = fd.get('text').trim(); if (!text) return; S.notes.push(touch({ id: uid(), text, created: now(), pinned: false })); save(); render(); toast('Đã lưu ghi chú'); },
   saveNote(fd) { const n = S.notes.find(x => x.id === fd.get('id')); n.text = fd.get('text').trim(); touch(n); save(); closeDlg(); render(); },
   addReminder(fd) { S.reminders.push(touch({ id: uid(), title: fd.get('title').trim(), at: fd.get('at'), repeat: fd.get('repeat'), done: false, notified: false })); save(); render(); toast('Đã thêm nhắc nhở'); },
