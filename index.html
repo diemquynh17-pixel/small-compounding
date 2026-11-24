@@ -135,7 +135,7 @@ main{padding:20px 16px calc(96px + env(safe-area-inset-bottom))}
 .ib:hover{background:var(--active);color:var(--text)}
 .ib.on{color:var(--accent)}
 .ib.warn{color:var(--negative)}
-input[type=text],input[type=password],input[type=url],input[type=number],input[type=date],input[type=datetime-local],input[type=search],select,textarea{
+input[type=text],input[type=password],input[type=url],input[type=number],input[type=date],input[type=time],input[type=datetime-local],input[type=search],select,textarea{
   height:var(--control-h);width:100%;min-width:0;padding:0 14px;border:1px solid var(--border);border-radius:999px;background:var(--raised);outline:none}
 select{padding-right:8px}
 textarea{height:auto;min-height:96px;padding:12px 14px;border-radius:14px;resize:vertical;line-height:20px}
@@ -156,9 +156,10 @@ label.f .help{display:block;font-weight:400;color:var(--muted);font-size:13px;ma
 .prio .ph h2 .i{color:var(--negative)}
 .prio .ph h2 small{font-size:11px;font-weight:600;letter-spacing:.08em;text-transform:uppercase;color:var(--negative)}
 .prio .ph .meta{color:var(--neg-ink)}
-.prio input[type=text],.prio input[type=date],.prio input[type=number]{background:var(--surface)}
+.prio input[type=text],.prio input[type=date],.prio input[type=time],.prio input[type=number]{background:var(--surface)}
 .prio .pf{display:grid;grid-template-columns:1fr 1fr;gap:8px}
 .prio .pf .full{grid-column:1/-1}
+.prio .pf .btn{align-self:end}
 .prio .pf label{display:block;font-size:12px;color:var(--neg-ink);font-weight:500}
 .prio .pf label>input{margin-top:4px;font-weight:400}
 .prio .li{border-top-color:rgba(180,35,24,.22);align-items:flex-start;padding:10px 0}
@@ -650,24 +651,25 @@ function vToday() {
 }
 // ---------- Việc ưu tiên (có deadline) ----------
 function dlInfo(p, t) {
-  const n = Math.round((parseYmd(p.deadline) - parseYmd(t)) / 864e5);
-  if (p.done) return { cls: '', txt: `Hạn ${fmtDay(p.deadline)}` };
-  if (n < 0) return { cls: 'late', txt: `Hạn ${fmtDay(p.deadline)} · quá ${-n} ngày` };
-  if (n === 0) return { cls: 'late', txt: 'Hạn hôm nay' };
-  if (n === 1) return { cls: 'soon', txt: `Hạn ngày mai · ${fmtDay(p.deadline)}` };
-  return { cls: n <= 3 ? 'soon' : '', txt: `Hạn ${fmtDay(p.deadline)} · còn ${n} ngày` };
+  const n = Math.round((parseYmd(p.deadline) - parseYmd(t)) / 864e5), st = p.start ? ` · bắt đầu ${p.start}` : '';
+  if (p.done) return { cls: '', txt: `Hạn ${fmtDay(p.deadline)}${st}` };
+  if (n < 0) return { cls: 'late', txt: `Hạn ${fmtDay(p.deadline)} · quá ${-n} ngày${st}` };
+  if (n === 0) return { cls: 'late', txt: `Hạn hôm nay${st}` };
+  if (n === 1) return { cls: 'soon', txt: `Hạn ngày mai · ${fmtDay(p.deadline)}${st}` };
+  return { cls: n <= 3 ? 'soon' : '', txt: `Hạn ${fmtDay(p.deadline)} · còn ${n} ngày${st}` };
 }
 function priorityHtml() {
   const t = todayStr();
-  const list = S.priorities.slice().sort((a, b) => (a.done - b.done) || a.deadline.localeCompare(b.deadline) || a.created - b.created);
+  const list = S.priorities.slice().sort((a, b) => (a.done - b.done) || a.deadline.localeCompare(b.deadline) || (a.start || '99:99').localeCompare(b.start || '99:99') || a.created - b.created);
   const open = list.filter(x => !x.done), planned = open.reduce((a, x) => a + (+x.plan || 0), 0);
   return `<section class="panel s4 prio" aria-label="Việc ưu tiên">
     <div class="ph"><h2>${ic('alert-circle', 20)}Việc ưu tiên <small>Priority</small></h2><span class="meta num">${open.length} việc${planned ? ` · ${fmtMin(planned)}` : ''}</span></div>
     <form data-f="addPriority" class="pf">
       <input class="full" type="text" name="title" placeholder="Việc có deadline" autocomplete="off" required aria-label="Việc ưu tiên mới">
       <label>Deadline<input type="date" name="deadline" value="${t}" min="${t}" required></label>
+      <label>Giờ bắt đầu<input type="time" name="start"></label>
       <label>Dự định (phút)<input type="number" inputmode="numeric" name="plan" min="0" step="5" placeholder="60"></label>
-      <button class="btn primary full">Thêm việc ưu tiên</button>
+      <button class="btn primary">Thêm</button>
     </form>
     <ul class="list" style="margin-top:8px">${list.map(x => { const d = dlInfo(x, t); return `<li class="li ${x.done ? 'done' : ''}">
       <button class="ck ${x.done ? 'on' : ''}" data-a="togglePrio" data-id="${x.id}" aria-pressed="${!!x.done}" aria-label="Hoàn thành ${esc(x.title)}">${ic('check', 15)}</button>
@@ -1520,7 +1522,7 @@ const F = {
     touch(v); save(); closeDlg(); render(); toast('Đã lưu note video');
   },
   addTask(fd) { S.tasks.push(touch({ id: uid(), title: fd.get('title').trim(), date: fd.get('date'), done: false, min: 0, created: now() })); save(); render(); focusTaskInput(fd.get('date')); },
-  addPriority(fd) { const title = fd.get('title').trim(); if (!title) return; S.priorities.push(touch({ id: uid(), title, deadline: fd.get('deadline') || todayStr(), plan: Math.max(0, +fd.get('plan') || 0), done: false, created: now() })); save(); render(); toast('Đã thêm việc ưu tiên'); },
+  addPriority(fd) { const title = fd.get('title').trim(); if (!title) return; S.priorities.push(touch({ id: uid(), title, deadline: fd.get('deadline') || todayStr(), start: fd.get('start') || '', plan: Math.max(0, +fd.get('plan') || 0), done: false, created: now() })); save(); render(); toast('Đã thêm việc ưu tiên'); },
   addNote(fd) { const text = fd.get('text').trim(); if (!text) return; S.notes.push(touch({ id: uid(), text, created: now(), pinned: false })); save(); render(); toast('Đã lưu ghi chú'); },
   saveNote(fd) { const n = S.notes.find(x => x.id === fd.get('id')); n.text = fd.get('text').trim(); touch(n); save(); closeDlg(); render(); },
   addReminder(fd) { S.reminders.push(touch({ id: uid(), title: fd.get('title').trim(), at: fd.get('at'), repeat: fd.get('repeat'), done: false, notified: false })); save(); render(); toast('Đã thêm nhắc nhở'); },
